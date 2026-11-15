@@ -181,7 +181,10 @@ export async function runDemoAnalysis(
 
   // 1. Try Live FastAPI Microservice first if available
   try {
-    const mlUrl = process.env.NEXT_PUBLIC_ML_SERVICE_URL || "http://localhost:8001/predict";
+    let mlUrl = process.env.NEXT_PUBLIC_ML_SERVICE_URL || "http://localhost:8001/predict";
+    if (!mlUrl.endsWith("/predict")) {
+      mlUrl = mlUrl.replace(/\/+$/, "") + "/predict";
+    }
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000);
 

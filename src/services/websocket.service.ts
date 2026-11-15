@@ -14,10 +14,18 @@ class WebSocketService {
   private reconnectInterval = 3000;
 
   constructor() {
-    const host =
+    let host =
       typeof window !== "undefined"
         ? process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8001/ws/live-feed"
         : "ws://localhost:8001/ws/live-feed";
+
+    // Auto-normalize protocol and route path
+    if (host.startsWith("http://")) host = host.replace("http://", "ws://");
+    if (host.startsWith("https://")) host = host.replace("https://", "wss://");
+    if (!host.endsWith("/ws/live-feed")) {
+      host = host.replace(/\/+$/, "") + "/ws/live-feed";
+    }
+
     this.url = host;
   }
 
