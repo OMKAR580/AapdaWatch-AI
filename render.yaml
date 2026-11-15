@@ -1,0 +1,34 @@
+services:
+  # Python FastAPI ML Microservice with Hugging Face Multilingual Engine
+  - type: web
+    name: aapdawatch-ml-service
+    env: python
+    region: oregon
+    plan: standard
+    buildCommand: cd backend/ml-service && pip install -r requirements.txt
+    startCommand: cd backend/ml-service && python server.py
+    envVars:
+      - key: PORT
+        value: 8001
+      - key: KERAS_BACKEND
+        value: torch
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+  # Next.js Production Web UI
+  - type: web
+    name: aapdawatch-frontend
+    env: node
+    region: oregon
+    plan: standard
+    buildCommand: corepack enable && pnpm install && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_ML_SERVICE_URL
+        fromService:
+          type: web
+          name: aapdawatch-ml-service
+          envVarKey: RENDER_EXTERNAL_URL
+

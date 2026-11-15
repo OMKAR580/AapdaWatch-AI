@@ -1,0 +1,12 @@
+{
+  "tokenizer_class": "keras.src.legacy.preprocessing.text.Tokenizer",
+  "num_words": 15000,
+  "document_count": 5988,
+  "split": " ",
+  "lower": true,
+  "filters": "!\"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n",
+  "char_level": false,
+  "oov_token": "<OOV>",
+  "vocabulary_size": 13965,
+  "max_index": 13964
+}

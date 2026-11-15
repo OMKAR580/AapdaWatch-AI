@@ -1,0 +1,354 @@
+// AapdaWatch AI — PostgreSQL & PostGIS Prisma Schema
+// Phase 2.0 — Backend Foundation & Database Architecture
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ----------------------------------------------------
+// ENUMS
+// ----------------------------------------------------
+
+enum UserRole {
+  ADMIN
+  ANALYST
+  REVIEWER
+  VIEWER
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum ReportSourceType {
+  SOCIAL_MEDIA
+  FIELD_DISPATCH
+  CITIZEN_REPORT
+  NEWS_FEED
+  EMERGENCY_RADIO
+  OTHER
+}
+
+enum DisasterCategory {
+  FLOOD
+  EARTHQUAKE
+  FIRE
+  CYCLONE
+  LANDSLIDE
+  OTHER
+}
+
+enum IncidentSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum OperationalStatus {
+  OPEN
+  MONITORING
+  CONTAINED
+  RESOLVED
+  CLOSED
+}
+
+enum PredictedLabel {
+  DISASTER_RELATED
+  NOT_DISASTER_RELATED
+  INCONCLUSIVE
+}
+
+enum InferenceStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum RelationshipType {
+  PRIMARY_SIGNAL
+  CORROBORATING_EVIDENCE
+  UPDATED_STATUS
+  CASUALTY_REPORT
+}
+
+enum ReviewDecision {
+  UNDER_REVIEW
+  VERIFIED_DISASTER
+  FALSE_POSITIVE
+  DUPLICATE
+}
+
+enum CorrelationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum AuditAction {
+  REPORT_CREATED
+  REPORT_UPDATED
+  ANALYSIS_RECORDED
+  REVIEW_SUBMITTED
+  INCIDENT_CREATED
+  INCIDENT_UPDATED
+  CORRELATION_ACCEPTED
+  CORRELATION_REJECTED
+  BATCH_JOB_SUBMITTED
+  SYSTEM_CONFIG_CHANGED
+}
+
+enum BatchJobType {
+  CSV_REPORT_INGESTION
+  BULK_ANALYSIS
+  HISTORICAL_IMPORT
+}
+
+enum BatchJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ----------------------------------------------------
+// ENTITIES
+// ----------------------------------------------------
+
+/// Represents registered system operators, analysts, reviewers, and administrators.
+model User {
+  id            String        @id @default(uuid()) @db.Uuid
+  name          String
+  email         String        @unique
+  passwordHash  String?
+  role          UserRole      @default(ANALYST)
+  accountStatus AccountStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relationships
+  createdReports        DisasterReport[]       @relation("ReportCreator")
+  createdIncidents      Incident[]             @relation("IncidentCreator")
+  linkedIncidentReports IncidentReport[]       @relation("ReportLinker")
+  reviews               IncidentReview[]       @relation("Reviewer")
+  reviewedCorrelations  CorrelationCandidate[] @relation("CorrelationReviewer")
+  auditLogs             AuditLog[]             @relation("AuditActor")
+  submittedBatchJobs    BatchJob[]             @relation("JobSubmitter")
+
+  @@index([email])
+  @@index([role])
+}
+
+/// Represents an incoming unstructured disaster message, field report, or social dispatch.
+model DisasterReport {
+  id             String           @id @default(uuid()) @db.Uuid
+  externalId     String?          @unique
+  originalText   String           @db.Text
+  normalizedText String?          @db.Text
+  sourceType     ReportSourceType @default(SOCIAL_MEDIA)
+  sourceName     String?
+  sourceUrl      String?
+  submittedAt    DateTime
+  ingestedAt     DateTime         @default(now())
+  latitude       Float?
+  longitude      Float?
+  locationName   String?
+  language       String?          @default("en")
+
+  // PostGIS spatial Point geometry (SRID 4326: WGS 84 GPS coordinates)
+  // Populated and indexed via custom SQL migration and triggers/spatial functions
+  locationGeom   Unsupported("geometry(Point, 4326)")?
+
+  createdById    String?          @db.Uuid
+  createdBy      User?            @relation("ReportCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  // Relationships
+  analyses              Analysis[]
+  incidentReports       IncidentReport[]
+  reviews               IncidentReview[]
+  correlationCandidates CorrelationCandidate[]
+
+  @@index([ingestedAt])
+  @@index([sourceType])
+  @@index([submittedAt])
+  @@index([latitude, longitude])
+  @@index([locationName])
+}
+
+/// Represents an automated ML model inference record.
+/// Preserves complete prediction history, threshold, and feature attribution.
+model Analysis {
+  id                   String          @id @default(uuid()) @db.Uuid
+  reportId             String          @db.Uuid
+  report               DisasterReport  @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  predictedLabel       PredictedLabel
+  probability          Float
+  decisionThreshold    Float           @default(0.35)
+  suggestedCategory    DisasterCategory?
+  modelName            String          @default("AapdaWatch-BiLSTM")
+  modelVersion         String          @default("1.0.0")
+  preprocessingVersion String          @default("1.0.0")
+  inferenceStatus      InferenceStatus @default(COMPLETED)
+  metadata             Json?
+  createdAt            DateTime        @default(now())
+
+  @@index([reportId])
+  @@index([predictedLabel])
+  @@index([createdAt])
+  @@index([modelName, modelVersion])
+}
+
+/// Represents a distinct physical or operational disaster situation grouping multiple correlated reports.
+model Incident {
+  id                String            @id @default(uuid()) @db.Uuid
+  incidentCode      String            @unique
+  title             String
+  description       String            @db.Text
+  category          DisasterCategory
+  severity          IncidentSeverity
+  operationalStatus OperationalStatus @default(OPEN)
+  locationName      String
+  latitude          Float?
+  longitude         Float?
+
+  // PostGIS spatial Point geometry (SRID 4326: WGS 84 GPS coordinates)
+  locationGeom      Unsupported("geometry(Point, 4326)")?
+
+  startedAt         DateTime?
+  endedAt           DateTime?
+  createdById       String?           @db.Uuid
+  createdBy         User?             @relation("IncidentCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relationships
+  incidentReports       IncidentReport[]
+  reviews               IncidentReview[]
+  correlationCandidates CorrelationCandidate[]
+
+  @@index([category])
+  @@index([severity])
+  @@index([operationalStatus])
+  @@index([startedAt])
+  @@index([locationName])
+  @@index([latitude, longitude])
+}
+
+/// Explicit Many-to-Many junction table linking DisasterReports to Incidents.
+/// Prevents reportCount desynchronization and enables auditable corroboration networks.
+model IncidentReport {
+  id               String           @id @default(uuid()) @db.Uuid
+  incidentId       String           @db.Uuid
+  incident         Incident         @relation(fields: [incidentId], references: [id], onDelete: Restrict)
+  reportId         String           @db.Uuid
+  report           DisasterReport   @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  linkedById       String?          @db.Uuid
+  linkedBy         User?            @relation("ReportLinker", fields: [linkedById], references: [id], onDelete: SetNull)
+  linkedAt         DateTime         @default(now())
+  relationshipType RelationshipType @default(CORROBORATING_EVIDENCE)
+
+  @@unique([incidentId, reportId], name: "unique_incident_report")
+  @@index([incidentId])
+  @@index([reportId])
+  @@index([linkedAt])
+}
+
+/// Represents an official human-in-the-loop review verdict.
+/// Preserves immutable audit history — new reviews do not overwrite earlier determinations.
+model IncidentReview {
+  id         String         @id @default(uuid()) @db.Uuid
+  reportId   String         @db.Uuid
+  report     DisasterReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  incidentId String?        @db.Uuid
+  incident   Incident?      @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  reviewerId String         @db.Uuid
+  reviewer   User           @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  decision   ReviewDecision
+  notes      String?        @db.Text
+  reviewedAt DateTime       @default(now())
+  createdAt  DateTime       @default(now())
+
+  @@index([reportId])
+  @@index([incidentId])
+  @@index([reviewerId])
+  @@index([decision])
+  @@index([reviewedAt])
+}
+
+/// Represents an automated or suggested link between an incoming report and an existing incident folder.
+model CorrelationCandidate {
+  id               String            @id @default(uuid()) @db.Uuid
+  reportId         String            @db.Uuid
+  report           DisasterReport    @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  targetIncidentId String            @db.Uuid
+  targetIncident   Incident          @relation(fields: [targetIncidentId], references: [id], onDelete: Restrict)
+  correlationScore Float
+  reasoning        Json?
+  status           CorrelationStatus @default(PENDING)
+  reviewedById     String?           @db.Uuid
+  reviewedBy       User?             @relation("CorrelationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([reportId, targetIncidentId, status], name: "unique_pending_candidate")
+  @@index([reportId])
+  @@index([targetIncidentId])
+  @@index([status])
+  @@index([correlationScore])
+}
+
+/// Append-only audit trail logging administrative, operational, and verification actions.
+model AuditLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  actorId    String?     @db.Uuid
+  actor      User?       @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action     AuditAction
+  entityType String
+  entityId   String
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+/// Represents bulk ingestion or historical export jobs.
+model BatchJob {
+  id               String         @id @default(uuid()) @db.Uuid
+  submittedById    String?        @db.Uuid
+  submittedBy      User?          @relation("JobSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+  jobType          BatchJobType
+  status           BatchJobStatus @default(QUEUED)
+  totalRecords     Int            @default(0)
+  processedRecords Int            @default(0)
+  failedRecords    Int            @default(0)
+  errorSummary     String?        @db.Text
+  metadata         Json?
+  createdAt        DateTime       @default(now())
+  startedAt        DateTime?
+  completedAt      DateTime?
+
+  @@index([status])
+  @@index([jobType])
+  @@index([submittedById])
+  @@index([createdAt])
+}
+

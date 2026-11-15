@@ -1,26 +1,252 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Warm Organic Glass Palette (Light Mode) */
+  --gw-ink: #221d18;
+  --gw-muted: #796f63;
+  --gw-accent: #294b39;
+  --gw-line: rgba(168, 154, 135, 0.28);
+  --gw-background: #ddd1be;
+  --gw-shade: rgba(221, 209, 190, 0.45);
+  --gw-surface: #f7f1e6;
+  --gw-panel: #f7f1e6;
+  --gw-brand: #294b39;
+  --gw-brand-ink: #faf6ef;
+  --gw-avatar: #efe7db;
+  --gw-rail-active: rgba(239, 231, 219, 0.85);
+  --gw-positive-surface: rgba(41, 75, 57, 0.14);
+  --gw-dock: rgba(247, 241, 230, 0.75);
+  --gw-dock-active: #ffffff;
+  --gw-dock-ink: #221d18;
+  --gw-dock-hover: rgba(239, 231, 219, 0.5);
+  --gw-hover: rgba(239, 231, 219, 0.45);
+  --gw-highlight: rgba(255, 255, 255, 0.85);
+  --gw-popover: rgba(247, 241, 230, 0.95);
+  --gw-shadow: rgba(34, 29, 24, 0.12);
+  --gw-panel-shadow: rgba(34, 29, 24, 0.08);
+
+  /* Glass Tuner Defaults */
+  --gw-blur: 22px;
+  --gw-opacity: 0.3;
+  --gw-saturation: 1.2;
+  --gw-tint: #ffffff;
+  --gw-edge: 0.6;
+
+  /* App Variables */
+  --bg-main: var(--gw-background);
+  --surface: var(--gw-surface);
+  --text-primary: var(--gw-ink);
+  --text-muted: var(--gw-muted);
+  --primary: #294b39;
+  --radius: 20px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  /* Warm Organic Glass Palette (Dark Mode) */
+  --gw-ink: #f4ecdf;
+  --gw-muted: #a89d8f;
+  --gw-accent: #6db18b;
+  --gw-line: rgba(120, 105, 90, 0.25);
+  --gw-background: #120e0b;
+  --gw-shade: rgba(18, 14, 11, 0.75);
+  --gw-surface: #201a15;
+  --gw-panel: #201a15;
+  --gw-brand: #3b6851;
+  --gw-brand-ink: #f4ecdf;
+  --gw-avatar: #2c251f;
+  --gw-rail-active: rgba(44, 37, 31, 0.85);
+  --gw-positive-surface: rgba(109, 177, 139, 0.18);
+  --gw-dock: rgba(32, 26, 21, 0.82);
+  --gw-dock-active: #2c251f;
+  --gw-dock-ink: #f4ecdf;
+  --gw-dock-hover: rgba(44, 37, 31, 0.6);
+  --gw-hover: rgba(44, 37, 31, 0.45);
+  --gw-highlight: rgba(255, 255, 255, 0.2);
+  --gw-popover: rgba(32, 26, 21, 0.95);
+  --gw-shadow: rgba(0, 0, 0, 0.45);
+  --gw-panel-shadow: rgba(0, 0, 0, 0.35);
+
+  --bg-main: var(--gw-background);
+  --surface: var(--gw-surface);
+  --text-primary: var(--gw-ink);
+  --text-muted: var(--gw-muted);
+  --primary: #6db18b;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  scroll-behavior: smooth;
+  letter-spacing: -0.012em;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--gw-background);
+  color: var(--gw-ink);
+  min-height: 100vh;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Warm Room Background Behind Frosted Glass */
+.gw-room-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  object-position: center 45%;
+  z-index: -3;
+  pointer-events: none;
+}
+
+.gw-room-gradient {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 15%, rgba(247, 241, 230, 0.4) 0%, transparent 70%),
+    linear-gradient(180deg, var(--gw-shade) 0%, var(--gw-background) 100%);
+}
+
+.dark .gw-room-gradient {
+  background:
+    radial-gradient(ellipse at 50% 15%, rgba(45, 36, 28, 0.5) 0%, transparent 75%),
+    linear-gradient(180deg, rgba(18, 14, 11, 0.8) 0%, #120e0b 100%);
+}
+
+/* Core Glassmorphic System */
+.gw-glass {
+  background: color-mix(
+    in srgb,
+    var(--gw-surface) calc(var(--gw-opacity) * 100%),
+    transparent
+  );
+  backdrop-filter: blur(var(--gw-blur)) saturate(var(--gw-saturation));
+  -webkit-backdrop-filter: blur(var(--gw-blur)) saturate(var(--gw-saturation));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gw-highlight) calc(var(--gw-edge) * 100%), transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--gw-highlight) calc(var(--gw-edge) * 35%), transparent),
+    0 20px 48px -20px var(--gw-shadow);
+  position: relative;
+}
+
+.gw-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--gw-tint);
+  opacity: 0.12;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Inner Glass Panel */
+.gw-panel {
+  background: color-mix(
+    in srgb,
+    var(--gw-panel) calc((0.18 + var(--gw-opacity) * 0.45) * 100%),
+    transparent
+  );
+  border-radius: 20px;
+  backdrop-filter: blur(calc(var(--gw-blur) * 0.75));
+  -webkit-backdrop-filter: blur(calc(var(--gw-blur) * 0.75));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gw-highlight) calc(var(--gw-edge) * 75%), transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--gw-highlight) calc(var(--gw-edge) * 20%), transparent),
+    0 10px 28px -18px var(--gw-panel-shadow);
+  padding: 22px;
+  position: relative;
+}
+
+/* Legacy .glass alias compatibility */
+.glass {
+  background: color-mix(in srgb, var(--gw-surface) calc(var(--gw-opacity) * 100%), transparent);
+  backdrop-filter: blur(var(--gw-blur)) saturate(var(--gw-saturation));
+  -webkit-backdrop-filter: blur(var(--gw-blur)) saturate(var(--gw-saturation));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gw-highlight) calc(var(--gw-edge) * 100%), transparent),
+    0 12px 32px -16px var(--gw-shadow);
+  border: 1px solid var(--gw-line);
+}
+
+.glass-strong {
+  background: color-mix(in srgb, var(--gw-surface) calc((var(--gw-opacity) + 0.3) * 100%), transparent);
+  backdrop-filter: blur(calc(var(--gw-blur) + 6px)) saturate(var(--gw-saturation));
+  -webkit-backdrop-filter: blur(calc(var(--gw-blur) + 6px)) saturate(var(--gw-saturation));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gw-highlight) calc(var(--gw-edge) * 100%), transparent),
+    0 16px 36px -14px var(--gw-shadow);
+  border: 1px solid var(--gw-line);
+}
+
+.glass-subtle {
+  background: color-mix(in srgb, var(--gw-surface) calc((var(--gw-opacity) * 0.6) * 100%), transparent);
+  backdrop-filter: blur(calc(var(--gw-blur) * 0.7));
+  -webkit-backdrop-filter: blur(calc(var(--gw-blur) * 0.7));
+  border: 1px solid var(--gw-line);
+}
+
+/* Floating Bottom Dock */
+.gw-dock {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 36px;
+  padding: 6px;
+  white-space: nowrap;
+  background: var(--gw-dock);
+  backdrop-filter: blur(24px) saturate(var(--gw-saturation));
+  -webkit-backdrop-filter: blur(24px) saturate(var(--gw-saturation));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gw-highlight) calc(var(--gw-edge) * 85%), transparent),
+    0 16px 40px -12px var(--gw-shadow);
+  border: 1px solid var(--gw-line);
+}
+
+.gw-dock-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 28px;
+  padding: 9px 18px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gw-muted);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gw-dock-item:hover {
+  color: var(--gw-ink);
+  background: var(--gw-dock-hover);
+}
+
+.gw-dock-item[aria-current="page"],
+.gw-dock-item.active {
+  background: var(--gw-dock-active);
+  color: var(--gw-dock-ink);
+  box-shadow: 0 4px 12px -2px var(--gw-shadow);
+  font-weight: 600;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gw-line);
+  border-radius: 100px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gw-muted);
 }

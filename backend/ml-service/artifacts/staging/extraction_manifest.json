@@ -1,0 +1,84 @@
+{
+  "manifest_version": "1.0",
+  "recovery_phase": "Phase 3.1",
+  "timestamp_iso": "2026-11-15T15:45:00+05:30",
+  "python_runtime": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+  "original_artifacts": {
+    "AapdaWatch_BiLSTM.pkl": {
+      "path": "E:\\NLP\\ML_model\\AapdaWatch_BiLSTM.pkl",
+      "sha256": "6E1DC1306B78FDE22953234E5EC98C5957906A31984B44AC825076C34261A573",
+      "size_bytes": 7598925
+    },
+    "tokenizer.pkl": {
+      "path": "E:\\NLP\\ML_model\\tokenizer.pkl",
+      "sha256": "84FFD459B77CF8410481D70F85C38FCFE6DD83CE57BDF09DAF47382D8A1E3D78",
+      "size_bytes": 552411
+    },
+    "model_metadata.json": {
+      "path": "E:\\NLP\\ML_model\\model_metadata.json",
+      "sha256": "A7137FF8EE3CCAD315B35AE850147FD28BEF8BE4373F20BD2E8DDA5F3F72ABEA",
+      "size_bytes": 587
+    },
+    "preprocessing.py": {
+      "path": "E:\\NLP\\ML_model\\preprocessing.py",
+      "sha256": "CB0D42F7658B26D02A356F86AF690D972E8FEF8683478396FE5F84E9C9B2FE3B",
+      "size_bytes": 456
+    }
+  },
+  "extracted_artifacts": {
+    "aapdawatch_bilstm.keras": {
+      "path": "E:\\NLP\\aapdawatch-ai\\backend\\ml-service\\artifacts\\staging\\aapdawatch_bilstm.keras",
+      "sha256": "0B008840219FA29A6F2CB980BD266A5046A2D6388B09BD6520345010A22AF671",
+      "size_bytes": 7598774,
+      "zip_crc_valid": true,
+      "members": {
+        "metadata.json": {
+          "size_bytes": 64,
+          "sha256": "5D08C0177413A492ADC8A9D6B23363FEDA2BDB562B1275C52D5E33D3099AE458"
+        },
+        "config.json": {
+          "size_bytes": 6248,
+          "sha256": "D16378DD82A9649EE6DA3674E563DF6BE4F48AFF75B7A01170DB0BC28A3893DE"
+        },
+        "model.weights.h5": {
+          "size_bytes": 7592132,
+          "sha256": "741F0497E022015972BC1F03BA645F73F92B7AC560B5B50FB38CDADFB8C244C1",
+          "hdf5_signature_valid": true
+        }
+      }
+    },
+    "tokenizer_vocab.json": {
+      "path": "E:\\NLP\\aapdawatch-ai\\backend\\ml-service\\artifacts\\staging\\tokenizer_vocab.json",
+      "sha256": "206937A3218B5DAED87ED55D98DF0B3E92D41849817723AB83C3EEB95CA41BC2",
+      "total_vocabulary_count": 13964,
+      "index_bounds": [
+        1,
+        13964
+      ],
+      "embedding_input_dim_required": 13965
+    },
+    "tokenizer_config.json": {
+      "path": "E:\\NLP\\aapdawatch-ai\\backend\\ml-service\\artifacts\\staging\\tokenizer_config.json",
+      "sha256": "00A5BB58EF4E11E16011E785C0E66155D95843E95D425E528C6F772F40AD8051",
+      "configuration": {
+        "tokenizer_class": "keras.src.legacy.preprocessing.text.Tokenizer",
+        "num_words": 15000,
+        "document_count": 5988,
+        "split": " ",
+        "lower": true,
+        "filters": "!\"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n",
+        "char_level": false,
+        "oov_token": "<OOV>",
+        "vocabulary_size": 13965,
+        "max_index": 13964
+      }
+    }
+  },
+  "security_compliance": {
+    "untrusted_pickle_deserialized": false,
+    "pickle_load_executed": false,
+    "joblib_load_executed": false,
+    "arbitrary_code_executed": false,
+    "original_files_modified": false
+  }
+}
