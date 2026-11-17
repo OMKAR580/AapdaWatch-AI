@@ -404,17 +404,17 @@ export function IncidentMap({
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 * i + 0.1, duration: 0.4 }}
-                className="pointer-events-none"
+                className="pointer-events-none select-none"
               >
                 <foreignObject
                   x={pt.x + (node.xOffset ?? -50)}
                   y={pt.y + (node.yOffset ?? -35)}
                   width="100"
                   height="30"
-                  className="block"
+                  className="block pointer-events-none select-none"
                 >
-                  <div className="flex items-center justify-center h-full">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-white/95 dark:bg-[#1A2420]/95 text-black dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm whitespace-nowrap">
+                  <div className="flex items-center justify-center h-full pointer-events-none select-none">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-white/95 dark:bg-[#101520]/95 text-black dark:text-white border border-gray-200 dark:border-gray-800 shadow-sm whitespace-nowrap pointer-events-none select-none">
                       {node.label}
                     </span>
                   </div>
@@ -427,6 +427,7 @@ export function IncidentMap({
         {/* 5. Interactive Incident Markers on Exact Coordinates */}
         {incidentPoints.map(({ incident, x, y }) => {
           const isSelected = incident.id === selectedIncidentId;
+          const isHovered = hoveredIncident?.id === incident.id;
           const isCritical = incident.severity === "critical";
           const markerColor =
             incident.severity === "critical"
@@ -435,42 +436,34 @@ export function IncidentMap({
                 ? "#f59e0b"
                 : "#10b981";
 
+          const heightBase = viewMode === "india" ? 816 : 400;
+
           return (
-            <g
-              key={`incident-marker-${incident.id}`}
-              className="cursor-pointer"
-              onClick={() => onIncidentClick(incident)}
-              onMouseEnter={(e) => {
-                setHoveredIncident(incident);
-                const rect = svgRef.current?.getBoundingClientRect();
-                if (rect) {
-                  setTooltipPos({
-                    x: (x / 800) * rect.width,
-                    y: (y / 400) * rect.height,
-                  });
-                }
-              }}
-              onMouseLeave={() => {
-                setHoveredIncident(null);
-                setTooltipPos(null);
-              }}
-            >
-              {/* Highlight Halo for Selected Incident */}
-              {isSelected && (
+            <g key={`incident-marker-${incident.id}`}>
+              {/* Highlight Halo for Selected or Hovered Incident (Pointer Events None) */}
+              {(isSelected || isHovered) && (
                 <circle
                   cx={x}
                   cy={y}
-                  r="9"
+                  r="10"
                   fill="none"
                   stroke={markerColor}
                   strokeWidth="2"
-                  className="animate-pulse"
+                  className="pointer-events-none transition-all duration-200 animate-pulse"
+                  opacity={0.8}
                 />
               )}
 
-              {/* Pulsing Outer Wave for Critical Incidents */}
+              {/* Pulsing Outer Wave for Critical Incidents (Pointer Events None to prevent hover flickering) */}
               {isCritical && (
-                <circle cx={x} cy={y} r="5" fill={markerColor} opacity="0.6">
+                <circle
+                  cx={x}
+                  cy={y}
+                  r="5"
+                  fill={markerColor}
+                  opacity="0.6"
+                  className="pointer-events-none"
+                >
                   <animate
                     attributeName="r"
                     from="4"
@@ -488,16 +481,40 @@ export function IncidentMap({
                 </circle>
               )}
 
-              {/* Marker Core */}
+              {/* Marker Visual Core (Pointer Events None) */}
               <circle
                 cx={x}
                 cy={y}
-                r="4.5"
+                r={isHovered ? 6 : 4.5}
                 fill={markerColor}
                 stroke="#ffffff"
                 strokeWidth="1.5"
                 filter="url(#glow)"
-                className="drop-shadow-md hover:scale-125 transition-transform"
+                className="drop-shadow-md pointer-events-none transition-all duration-150"
+              />
+
+              {/* Dedicated Stable Hit Target (Invisible 16px Circle - Never shifts size, eliminating hover blinking) */}
+              <circle
+                cx={x}
+                cy={y}
+                r="16"
+                fill="transparent"
+                className="cursor-pointer"
+                onClick={() => onIncidentClick(incident)}
+                onMouseEnter={() => {
+                  setHoveredIncident(incident);
+                  const rect = svgRef.current?.getBoundingClientRect();
+                  if (rect) {
+                    setTooltipPos({
+                      x: (x / 800) * rect.width,
+                      y: (y / heightBase) * rect.height,
+                    });
+                  }
+                }}
+                onMouseLeave={() => {
+                  setHoveredIncident(null);
+                  setTooltipPos(null);
+                }}
               />
             </g>
           );
@@ -604,10 +621,10 @@ export function IncidentMap({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 6 }}
             transition={{ duration: 0.15 }}
-            className="absolute pointer-events-none z-40 bg-white/95 dark:bg-[#1A221E]/95 backdrop-blur-md border border-black/10 dark:border-white/15 rounded-xl shadow-2xl p-3 text-xs max-w-[220px] text-[#242B27] dark:text-[#E8EDE9]"
+            className="absolute pointer-events-none select-none z-40 bg-white/95 dark:bg-[#0c1017]/95 backdrop-blur-md border border-black/10 dark:border-white/15 rounded-xl shadow-2xl p-3 text-xs w-[220px] text-[#242B27] dark:text-[#E8EDE9]"
             style={{
-              left: Math.max(12, tooltipPos.x + 12),
-              top: Math.max(10, tooltipPos.y - 10),
+              left: Math.max(12, Math.min(tooltipPos.x + 14, (svgRef.current?.clientWidth || 800) - 230)),
+              top: Math.max(12, tooltipPos.y - 10),
             }}
           >
             <div className="flex items-center justify-between gap-2 mb-1">
