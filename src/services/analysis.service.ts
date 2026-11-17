@@ -72,6 +72,9 @@ const STRONG_DISASTER_TERMS: TermWeight[] = [
   { term: "bhaut barish", weight: 0.40 },
   { term: "bhookamp", weight: 0.35 },
   { term: "toofan", weight: 0.30 },
+  { term: "aag", weight: 0.35 },
+  { term: "aag lag", weight: 0.40 },
+  { term: "fire lag", weight: 0.40 },
   { term: "fas gaye", weight: 0.30 },
   { term: "bachao", weight: 0.30 },
   // Marathi / Bengali
@@ -181,12 +184,12 @@ export async function runDemoAnalysis(
 
   // 1. Try Live FastAPI Microservice first if available
   try {
-    let mlUrl = process.env.NEXT_PUBLIC_ML_SERVICE_URL || "http://localhost:8001/predict";
+    let mlUrl = process.env.NEXT_PUBLIC_ML_SERVICE_URL || "https://aapdawatch-ai.onrender.com/predict";
     if (!mlUrl.endsWith("/predict")) {
       mlUrl = mlUrl.replace(/\/+$/, "") + "/predict";
     }
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
 
     const res = await fetch(mlUrl, {
       method: "POST",
@@ -198,7 +201,7 @@ export async function runDemoAnalysis(
 
     if (res.ok) {
       const json = await res.json();
-      const isDisaster = (json.probability ?? 0) >= (json.decision_threshold ?? 0.35);
+      const isDisaster = (json.probability ?? 0) >= (json.decision_threshold ?? 0.43);
 
       // Extract location
       let suggestedLocation = "Central India / Field Report";
@@ -228,7 +231,7 @@ export async function runDemoAnalysis(
         suggestedCategory,
         suggestedLocation,
         suggestedCoordinates,
-        note: `NEURAL INFERENCE: Processed by ${json.model_name || "AapdaWatch DistilBERT v1.0 + Multilingual Engine"}.`,
+        note: `REAL NEURAL INFERENCE: Processed by ${json.model_name || "AapdaWatch DistilBERT v1.0 Transformer"} (Render Cloud).`,
         modelName: json.model_name || "AapdaWatch DistilBERT v1.0",
         modelVersion: json.model_version || "1.0.0",
         decisionThreshold: json.decision_threshold || 0.43,
@@ -236,15 +239,29 @@ export async function runDemoAnalysis(
       };
     }
   } catch {
-    // If backend microservice offline, proceed gracefully with client-side multilingual neural evaluator
+    // If backend microservice offline or spinning up, proceed gracefully with client-side multilingual neural evaluator
   }
 
-  // 2. Client-Side Multilingual Evaluation
+  // 2. Client-Side Multilingual Evaluation (High-Fidelity Heuristic Fallback)
   const lower = text.toLowerCase().trim();
   let score = 0;
   let matchesFound = 0;
 
+  // Check for common metaphorical / idiomatic non-disaster phrases
+  const isMetaphor =
+    /\b(she|he|they|it|you|i|we)\s+is\s+a\s+disaster\b/i.test(lower) ||
+    /\bdisaster\s+for\s+(this\s+work|the\s+work|this\s+job|work|my\s+team|company|business|exam)\b/i.test(lower) ||
+    /\b(recipe\s+for|economic|political|financial)\s+disaster\b/i.test(lower) ||
+    /\blooks?\s+like\s+a\s+bomb\b/i.test(lower) ||
+    /\b(party|movie|concert|music)\s+was\s+(a\s+bomb|fire|lit)\b/i.test(lower);
+
+  if (isMetaphor) {
+    score -= 0.60;
+  }
+
   for (const { term, weight } of STRONG_DISASTER_TERMS) {
+    // If the word "disaster" is isolated without a hazard name, ignore or give lower weight if metaphorical
+    if (term === "disaster" && isMetaphor) continue;
     if (lower.includes(term.toLowerCase())) {
       score += weight;
       matchesFound++;
@@ -256,6 +273,12 @@ export async function runDemoAnalysis(
       score += weight;
       matchesFound++;
     }
+  }
+
+  // Check for strong physical hazard phrases (e.g. "high fire", "fire in", "caught fire")
+  if (/\b(high\s+fire|massive\s+fire|fire\s+in|fire\s+broke\s+out|caught\s+fire|blazing\s+fire)\b/i.test(lower)) {
+    score += 0.40;
+    matchesFound++;
   }
 
   for (const { term, weight } of STRONG_NON_DISASTER_TERMS) {

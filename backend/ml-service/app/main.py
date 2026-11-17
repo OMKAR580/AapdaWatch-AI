@@ -158,11 +158,17 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.get("/health", response_model=HealthResponse, tags=["Monitoring"])
 async def health():
     ready = getattr(app.state, "model_ready", False)
+    distilbert_ready = getattr(app.state, "distilbert_ready", False) or distilbert_engine.is_loaded
+    is_up = ready or distilbert_ready
     uptime = time.time() - getattr(app.state, "start_time", time.time())
     return HealthResponse(
-        status="UP" if ready else "DEGRADED",
+        status="UP" if is_up else "DEGRADED",
+        model_loaded=is_up,
+        backend="PyTorch DistilBERT Transformer" if distilbert_ready else "PyTorch BiLSTM",
+        runtime_readiness="ACTIVE_INFERENCE" if is_up else "DEGRADED",
         uptime_seconds=round(uptime, 2),
-        model_ready=ready,
+        model_ready=is_up,
+        distilbert_ready=distilbert_ready,
         startup_error=getattr(app.state, "startup_error", None),
         device="cpu",
     )
@@ -212,14 +218,14 @@ async def predict(payload: PredictionRequest):
     Automatically detects Indic/Multilingual languages (Hindi, Marathi, Bengali, Hinglish).
     Broadcasts results to connected WebSocket clients in real-time.
     """
-    # 1. Check if Indic/Multilingual script is detected
-    if multilingual_engine.is_indic_text(payload.text) or multilingual_engine.detect_detected_language(payload.text) != "en":
-        ml_res = multilingual_engine.classify_multilingual(payload.text, threshold=0.35)
+    # 1. Check if non-Latin Indic script (Hindi, Marathi, Bengali, etc.) is detected
+    if multilingual_engine.is_indic_text(payload.text):
+        ml_res = multilingual_engine.classify_multilingual(payload.text, threshold=0.43)
         response_data = PredictionResponse(
             prediction=ml_res["predicted_class"],
             probability=ml_res["disaster_probability"],
             confidence=max(ml_res["disaster_probability"], ml_res["non_disaster_probability"]),
-            decision_threshold=0.35,
+            decision_threshold=0.43,
             model_name="HuggingFace_Indic_Multilingual",
             model_version="1.1.0",
             inference_status="SUCCESS",
@@ -232,72 +238,71 @@ async def predict(payload: PredictionRequest):
             tokens=payload.text.split()[:30],
             request_id=payload.request_id
         )
+    # 2. English & Romanized text: Process via Fine-Tuned DistilBERT Transformer (85.10% accuracy)
+    elif distilbert_engine.is_loaded:
+        d_res = distilbert_engine.predict_single(payload.text, threshold=0.43)
+        response_data = PredictionResponse(
+            prediction=d_res["predicted_class"],
+            probability=d_res["probability"],
+            confidence=d_res["confidence"],
+            decision_threshold=d_res["threshold"],
+            model_name=d_res["model_name"],
+            model_version=d_res["model_version"],
+            inference_status="SUCCESS",
+            analysis_mode="TRANSFORMER_DISTILBERT",
+            is_synthetic=False,
+            preprocessing_version="nfkc_clean_v1",
+            preprocessing_parity="VERIFIED",
+            inference_duration_ms=d_res["inference_duration_ms"],
+            sequence_length=d_res["sequence_length"],
+            tokens=d_res["tokens"],
+            request_id=payload.request_id
+        )
+    elif getattr(app.state, "model_ready", False):
+        # BiLSTM fallback
+        result = predict_single(
+            text=payload.text,
+            threshold=0.35,
+            padding="post",
+            preprocessing_mode="candidate"
+        )
+        response_data = PredictionResponse(
+            prediction=result["predicted_class"],
+            probability=result["probability"],
+            confidence=result["confidence"],
+            decision_threshold=result["threshold"],
+            model_name="AapdaWatch_BiLSTM",
+            model_version="1.0.0",
+            inference_status="SUCCESS",
+            analysis_mode="ML",
+            is_synthetic=False,
+            preprocessing_version=result["preprocessing_mode"],
+            preprocessing_parity="UNVERIFIED",
+            inference_duration_ms=result["inference_duration_ms"],
+            sequence_length=result["sequence_length"],
+            tokens=result["tokens"][:30],
+            request_id=payload.request_id
+        )
     else:
-        # 2. English inference — prefer new fine-tuned DistilBERT (85.10% accuracy)
-        if distilbert_engine.is_loaded:
-            d_res = distilbert_engine.predict_single(payload.text, threshold=0.43)
-            response_data = PredictionResponse(
-                prediction=d_res["predicted_class"],
-                probability=d_res["probability"],
-                confidence=d_res["confidence"],
-                decision_threshold=d_res["threshold"],
-                model_name=d_res["model_name"],
-                model_version=d_res["model_version"],
-                inference_status="SUCCESS",
-                analysis_mode="TRANSFORMER_DISTILBERT",
-                is_synthetic=False,
-                preprocessing_version="nfkc_clean_v1",
-                preprocessing_parity="VERIFIED",
-                inference_duration_ms=d_res["inference_duration_ms"],
-                sequence_length=d_res["sequence_length"],
-                tokens=d_res["tokens"],
-                request_id=payload.request_id
-            )
-        elif getattr(app.state, "model_ready", False):
-            # BiLSTM fallback
-            result = predict_single(
-                text=payload.text,
-                threshold=0.35,
-                padding="post",
-                preprocessing_mode="candidate"
-            )
-            response_data = PredictionResponse(
-                prediction=result["predicted_class"],
-                probability=result["probability"],
-                confidence=result["confidence"],
-                decision_threshold=result["threshold"],
-                model_name="AapdaWatch_BiLSTM",
-                model_version="1.0.0",
-                inference_status="SUCCESS",
-                analysis_mode="ML",
-                is_synthetic=False,
-                preprocessing_version=result["preprocessing_mode"],
-                preprocessing_parity="UNVERIFIED",
-                inference_duration_ms=result["inference_duration_ms"],
-                sequence_length=result["sequence_length"],
-                tokens=result["tokens"][:30],
-                request_id=payload.request_id
-            )
-        else:
-            # Heuristic fallback
-            res = multilingual_engine.classify_multilingual(payload.text, threshold=0.35)
-            response_data = PredictionResponse(
-                prediction=res["predicted_class"],
-                probability=res["disaster_probability"],
-                confidence=max(res["disaster_probability"], res["non_disaster_probability"]),
-                decision_threshold=0.35,
-                model_name="AapdaWatch_Inference_Engine",
-                model_version="1.0.0",
-                inference_status="SUCCESS",
-                analysis_mode="FALLBACK_HEURISTIC",
-                is_synthetic=False,
-                preprocessing_version="candidate",
-                preprocessing_parity="UNVERIFIED",
-                inference_duration_ms=3.0,
-                sequence_length=len(payload.text.split()),
-                tokens=payload.text.split()[:30],
-                request_id=payload.request_id
-            )
+        # Heuristic fallback
+        res = multilingual_engine.classify_multilingual(payload.text, threshold=0.35)
+        response_data = PredictionResponse(
+            prediction=res["predicted_class"],
+            probability=res["disaster_probability"],
+            confidence=max(res["disaster_probability"], res["non_disaster_probability"]),
+            decision_threshold=0.35,
+            model_name="AapdaWatch_Inference_Engine",
+            model_version="1.0.0",
+            inference_status="SUCCESS",
+            analysis_mode="FALLBACK_HEURISTIC",
+            is_synthetic=False,
+            preprocessing_version="candidate",
+            preprocessing_parity="UNVERIFIED",
+            inference_duration_ms=3.0,
+            sequence_length=len(payload.text.split()),
+            tokens=payload.text.split()[:30],
+            request_id=payload.request_id
+        )
 
     # Broadcast event to WebSocket stream subscribers
     try:

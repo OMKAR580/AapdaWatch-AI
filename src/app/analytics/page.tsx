@@ -155,11 +155,10 @@ export default function AnalyticsPage() {
               type="button"
               suppressHydrationWarning
               onClick={() => setTimeRange("7d")}
-              className={`px-3 py-1 rounded-lg transition-colors font-medium ${
-                timeRange === "7d"
+              className={`px-3 py-1 rounded-lg transition-colors font-medium ${timeRange === "7d"
                   ? "bg-white dark:bg-[#1A2420] text-[#326B54] dark:text-[#DCE9DA] shadow-sm font-bold"
                   : "text-[#737A70]"
-              }`}
+                }`}
             >
               Last 7 Days
             </button>
@@ -167,11 +166,10 @@ export default function AnalyticsPage() {
               type="button"
               suppressHydrationWarning
               onClick={() => setTimeRange("30d")}
-              className={`px-3 py-1 rounded-lg transition-colors font-medium ${
-                timeRange === "30d"
+              className={`px-3 py-1 rounded-lg transition-colors font-medium ${timeRange === "30d"
                   ? "bg-white dark:bg-[#1A2420] text-[#326B54] dark:text-[#DCE9DA] shadow-sm font-bold"
                   : "text-[#737A70]"
-              }`}
+                }`}
             >
               Last 30 Days
             </button>

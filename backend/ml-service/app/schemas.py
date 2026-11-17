@@ -36,7 +36,7 @@ class PredictionResponse(BaseModel):
     preprocessing_parity: str = Field("UNVERIFIED", description="Provenance status of preprocessing")
     inference_duration_ms: float = Field(..., description="CPU compute latency in milliseconds")
     sequence_length: int = Field(..., description="Count of tokenized words before padding")
-    tokens: List[int] = Field(default_factory=list, description="Truncated integer token IDs")
+    tokens: List[Any] = Field(default_factory=list, description="Token strings or integer IDs")
     request_id: Optional[str] = None
 
 class BatchPredictionResponse(BaseModel):
@@ -46,9 +46,14 @@ class BatchPredictionResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
-    model_loaded: bool
-    backend: str
-    runtime_readiness: str
+    model_loaded: bool = True
+    backend: str = "PyTorch CPU"
+    runtime_readiness: str = "ACTIVE_INFERENCE"
+    uptime_seconds: Optional[float] = None
+    model_ready: Optional[bool] = None
+    distilbert_ready: Optional[bool] = None
+    startup_error: Optional[str] = None
+    device: Optional[str] = "cpu"
 
 class ModelInfoResponse(BaseModel):
     model_name: str

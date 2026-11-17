@@ -6,10 +6,18 @@ Loads aapdawatch_bilstm.keras in an isolated runtime without pickle deserializat
 import os
 import json
 
-# Ensure PyTorch backend is active for Keras 3 runtime
-os.environ["KERAS_BACKEND"] = "torch"
+import os
+import json
 
-import keras
+# Ensure PyTorch backend and local isolated directory are active for Keras 3 runtime
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.environ["KERAS_BACKEND"] = "torch"
+os.environ["KERAS_HOME"] = os.path.join(BASE_DIR, "artifacts")
+
+try:
+    import keras
+except Exception as e:
+    keras = None
 
 DEFAULT_MODEL_PATH = os.path.join(
     os.path.dirname(os.path.dirname(__file__)),
@@ -24,6 +32,8 @@ def get_bilstm_model(model_path: str = DEFAULT_MODEL_PATH):
     """
     global _MODEL_INSTANCE
     if _MODEL_INSTANCE is None:
+        if keras is None:
+            raise RuntimeError("Keras 3 runtime is not available.")
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Recovered model archive not found at: {model_path}")
         _MODEL_INSTANCE = keras.models.load_model(model_path)
