@@ -42,35 +42,35 @@
 }
 
 .dark {
-  /* Warm Organic Glass Palette (Dark Mode) */
-  --gw-ink: #f4ecdf;
-  --gw-muted: #a89d8f;
-  --gw-accent: #6db18b;
-  --gw-line: rgba(120, 105, 90, 0.25);
-  --gw-background: #120e0b;
-  --gw-shade: rgba(18, 14, 11, 0.75);
-  --gw-surface: #201a15;
-  --gw-panel: #201a15;
-  --gw-brand: #3b6851;
-  --gw-brand-ink: #f4ecdf;
-  --gw-avatar: #2c251f;
-  --gw-rail-active: rgba(44, 37, 31, 0.85);
-  --gw-positive-surface: rgba(109, 177, 139, 0.18);
-  --gw-dock: rgba(32, 26, 21, 0.82);
-  --gw-dock-active: #2c251f;
-  --gw-dock-ink: #f4ecdf;
-  --gw-dock-hover: rgba(44, 37, 31, 0.6);
-  --gw-hover: rgba(44, 37, 31, 0.45);
-  --gw-highlight: rgba(255, 255, 255, 0.2);
-  --gw-popover: rgba(32, 26, 21, 0.95);
-  --gw-shadow: rgba(0, 0, 0, 0.45);
-  --gw-panel-shadow: rgba(0, 0, 0, 0.35);
+  /* Ultra-Deep Obsidian / OLED Pitch Black Cyber-Glass Palette */
+  --gw-ink: #f8fafc;
+  --gw-muted: #94a3b8;
+  --gw-accent: #10b981;
+  --gw-line: rgba(255, 255, 255, 0.08);
+  --gw-background: #07080a;
+  --gw-shade: rgba(7, 8, 10, 0.92);
+  --gw-surface: #0c1017;
+  --gw-panel: #101520;
+  --gw-brand: #10b981;
+  --gw-brand-ink: #07080a;
+  --gw-avatar: #161f2e;
+  --gw-rail-active: rgba(22, 31, 46, 0.95);
+  --gw-positive-surface: rgba(16, 185, 129, 0.16);
+  --gw-dock: rgba(12, 16, 23, 0.88);
+  --gw-dock-active: #161f2e;
+  --gw-dock-ink: #f8fafc;
+  --gw-dock-hover: rgba(255, 255, 255, 0.08);
+  --gw-hover: rgba(255, 255, 255, 0.05);
+  --gw-highlight: rgba(255, 255, 255, 0.12);
+  --gw-popover: rgba(12, 16, 23, 0.96);
+  --gw-shadow: rgba(0, 0, 0, 0.85);
+  --gw-panel-shadow: rgba(0, 0, 0, 0.7);
 
   --bg-main: var(--gw-background);
   --surface: var(--gw-surface);
   --text-primary: var(--gw-ink);
   --text-muted: var(--gw-muted);
-  --primary: #6db18b;
+  --primary: #10b981;
 }
 
 * {
@@ -114,10 +114,16 @@ body {
     linear-gradient(180deg, var(--gw-shade) 0%, var(--gw-background) 100%);
 }
 
+.dark .gw-room-backdrop {
+  opacity: 0.12;
+  filter: grayscale(100%) brightness(0.25) contrast(1.2);
+}
+
 .dark .gw-room-gradient {
   background:
-    radial-gradient(ellipse at 50% 15%, rgba(45, 36, 28, 0.5) 0%, transparent 75%),
-    linear-gradient(180deg, rgba(18, 14, 11, 0.8) 0%, #120e0b 100%);
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(16, 185, 129, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 65%, rgba(6, 182, 212, 0.05) 0%, transparent 50%),
+    linear-gradient(180deg, rgba(7, 8, 10, 0.85) 0%, #07080a 100%);
 }
 
 /* Core Glassmorphic System */

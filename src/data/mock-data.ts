@@ -181,7 +181,7 @@ export const MOCK_REPORTS: DisasterReport[] = [
     category: "flood",
     verificationStatus: "verified",
     incidentId: "INC-001",
-    modelVersion: "AapdaWatch-BiLSTM-v1.0",
+    modelVersion: "AapdaWatch-DistilBERT-v1.0",
     location: { name: "Ratnagiri, Maharashtra", latitude: 16.9902, longitude: 73.312 },
   },
   {
@@ -196,7 +196,7 @@ export const MOCK_REPORTS: DisasterReport[] = [
     category: "flood",
     verificationStatus: "verified",
     incidentId: "INC-001",
-    modelVersion: "AapdaWatch-BiLSTM-v1.0",
+    modelVersion: "AapdaWatch-DistilBERT-v1.0",
     location: { name: "Ratnagiri, Maharashtra", latitude: 16.9902, longitude: 73.312 },
   },
   {
@@ -211,7 +211,7 @@ export const MOCK_REPORTS: DisasterReport[] = [
     category: "earthquake",
     verificationStatus: "under-review",
     incidentId: "INC-002",
-    modelVersion: "AapdaWatch-BiLSTM-v1.0",
+    modelVersion: "AapdaWatch-DistilBERT-v1.0",
     location: { name: "Bhuj, Gujarat", latitude: 23.242, longitude: 69.6669 },
   },
   {
@@ -226,7 +226,7 @@ export const MOCK_REPORTS: DisasterReport[] = [
     category: "fire",
     verificationStatus: "verified",
     incidentId: "INC-003",
-    modelVersion: "AapdaWatch-BiLSTM-v1.0",
+    modelVersion: "AapdaWatch-DistilBERT-v1.0",
     location: { name: "Coorg, Karnataka", latitude: 12.3375, longitude: 75.8069 },
   },
   {
@@ -240,7 +240,7 @@ export const MOCK_REPORTS: DisasterReport[] = [
     notDisasterProbability: 0.98,
     verificationStatus: "verified",
     incidentId: undefined,
-    modelVersion: "AapdaWatch-BiLSTM-v1.0",
+    modelVersion: "AapdaWatch-DistilBERT-v1.0",
   },
   {
     id: "RPT-006",
@@ -254,7 +254,7 @@ export const MOCK_REPORTS: DisasterReport[] = [
     category: "cyclone",
     verificationStatus: "unreviewed",
     incidentId: "INC-004",
-    modelVersion: "AapdaWatch-BiLSTM-v1.0",
+    modelVersion: "AapdaWatch-DistilBERT-v1.0",
     location: { name: "Visakhapatnam, AP", latitude: 17.6868, longitude: 83.2185 },
   },
   {
@@ -269,7 +269,7 @@ export const MOCK_REPORTS: DisasterReport[] = [
     category: "landslide",
     verificationStatus: "verified",
     incidentId: "INC-005",
-    modelVersion: "AapdaWatch-BiLSTM-v1.0",
+    modelVersion: "AapdaWatch-DistilBERT-v1.0",
     location: { name: "Mandi, HP", latitude: 31.7085, longitude: 76.9318 },
   },
   {
@@ -284,7 +284,7 @@ export const MOCK_REPORTS: DisasterReport[] = [
     verificationStatus: "false-positive",
     incidentId: undefined,
     reviewerNotes: "Not disaster-related. Correctly classified by model.",
-    modelVersion: "AapdaWatch-BiLSTM-v1.0",
+    modelVersion: "AapdaWatch-DistilBERT-v1.0",
   },
   {
     id: "RPT-009",
@@ -298,7 +298,7 @@ export const MOCK_REPORTS: DisasterReport[] = [
     category: "flood",
     verificationStatus: "under-review",
     incidentId: undefined,
-    modelVersion: "AapdaWatch-BiLSTM-v1.0",
+    modelVersion: "AapdaWatch-DistilBERT-v1.0",
     location: { name: "Guwahati, Assam", latitude: 26.1445, longitude: 91.7362 },
   },
   {
@@ -313,7 +313,7 @@ export const MOCK_REPORTS: DisasterReport[] = [
     category: "fire",
     verificationStatus: "verified",
     incidentId: "INC-007",
-    modelVersion: "AapdaWatch-BiLSTM-v1.0",
+    modelVersion: "AapdaWatch-DistilBERT-v1.0",
     location: { name: "Pune, Maharashtra", latitude: 18.5204, longitude: 73.8567 },
   },
 ];
@@ -413,13 +413,19 @@ export const MOCK_NOTIFICATIONS: NotificationItem[] = [
 ];
 
 export const MOCK_MODEL_INFO: ModelInfo = {
-  name: "AapdaWatch-BiLSTM",
+  name: "AapdaWatch-DistilBERT",
   version: "1.0.0",
-  type: "Bidirectional LSTM",
-  dataset: "Kaggle NLP Disaster Tweets",
-  evaluationStatus: "not-connected",
-  lastEvaluated: undefined,
-  metrics: undefined,
+  type: "Fine-Tuned DistilBERT Transformer",
+  dataset: "Kaggle NLP Disaster Tweets & Disasters Benchmark",
+  evaluationStatus: "connected",
+  lastEvaluated: "2026-11-17T22:00:00Z",
+  metrics: {
+    accuracy: 0.8510,
+    precision: 0.8766,
+    recall: 0.7571,
+    f1Score: 0.8124,
+    auc: 0.8990,
+  },
 };
 
 export const MOCK_BASELINE_MODEL_INFO: ModelInfo = {

@@ -20,7 +20,7 @@ const routeMeta: Record<string, { title: string; subtitle: string }> = {
   },
   "/analyze": {
     title: "Analyze Information",
-    subtitle: "Single message & batch CSV classification with Bi-LSTM model",
+    subtitle: "Real-time message & batch CSV classification with DistilBERT Transformer",
   },
   "/incidents": {
     title: "Incident Folders",

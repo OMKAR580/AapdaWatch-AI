@@ -114,14 +114,14 @@ export function generateReportPdfBlob(report: DisasterReport): Blob {
   streamCommands.push("0.98 0.98 0.98 rg 40 310 532 115 re f");
   streamCommands.push("0.82 0.85 0.82 RG 1 w 40 310 532 115 re S");
 
-  const modelName = escapePdfText(report.modelVersion || "AapdaWatch_BiLSTM (Keras 3 / PyTorch CPU)");
+  const modelName = escapePdfText(report.modelVersion || "AapdaWatch_DistilBERT v1.0 (Transformers 4.45 / PyTorch)");
   const verification = escapePdfText((report.verificationStatus || "unreviewed").toUpperCase());
   const incidentLinked = escapePdfText(report.incidentId || "Unassigned / Standalone Signal");
   const reviewer = escapePdfText(report.reviewedBy || "Pending Field Officer Verification");
   const notes = escapePdfText(report.reviewerNotes || "Awaiting Human-in-the-Loop review before dispatch.");
 
   streamCommands.push(`BT /F2 9 Tf 0.25 0.3 0.25 rg 55 405 Td (Model Architecture:) Tj /F1 9 Tf 165 405 Td (${modelName}) Tj ET`);
-  streamCommands.push(`BT /F2 9 Tf 0.25 0.3 0.25 rg 55 385 Td (Sigmoid Threshold:) Tj /F1 9 Tf 165 385 Td (0.35 - Optimized for High Emergency Recall) Tj ET`);
+  streamCommands.push(`BT /F2 9 Tf 0.25 0.3 0.25 rg 55 385 Td (Decision Threshold:) Tj /F1 9 Tf 165 385 Td (0.43 - Calibrated for Optimal F1 & Disaster Recall) Tj ET`);
   streamCommands.push(`BT /F2 9 Tf 0.25 0.3 0.25 rg 55 365 Td (Verification State:) Tj /F1 9 Tf 165 365 Td (${verification}) Tj ET`);
   streamCommands.push(`BT /F2 9 Tf 0.25 0.3 0.25 rg 55 345 Td (Correlated Incident:) Tj /F1 9 Tf 165 345 Td (${incidentLinked}) Tj ET`);
   streamCommands.push(`BT /F2 9 Tf 0.25 0.3 0.25 rg 55 325 Td (Reviewer Assessment:) Tj /F1 9 Tf 165 325 Td (${reviewer} - ${notes}) Tj ET`);
@@ -132,7 +132,7 @@ export function generateReportPdfBlob(report: DisasterReport): Blob {
   streamCommands.push("0.8 0.83 0.8 RG 1 w 40 170 532 110 re S");
 
   const protocolLines = [
-    "1. AUTOMATED SIGNAL: This document reflects machine inference from the AapdaWatch BiLSTM engine.",
+    "1. AUTOMATED SIGNAL: This document reflects machine inference from AapdaWatch DistilBERT Transformer.",
     "2. HUMAN VERIFICATION: Per SOP-NDMA-04, no physical deployment is permitted without field officer review.",
     "3. CROSS-VERIFICATION: Correlate with seismic (IMD), hydrological (CWC), or emergency dispatch logs.",
     "4. INTEGRITY GUARANTEE: Ingested text, model weights, and review logs are cryptographically tracked."
@@ -323,7 +323,7 @@ export function printReportDossier(report: DisasterReport): void {
   <div class="header-banner">
     <div>
       <div class="title">AAPDAWATCH AI — DISASTER INTELLIGENCE DOSSIER</div>
-      <div class="subtitle">Autonomous BiLSTM Neural Inference & Human Verification Platform</div>
+      <div class="subtitle">Autonomous DistilBERT Transformer Inference & Human Verification Platform</div>
     </div>
     <div style="text-align: right; font-size: 11px;">
       <div><strong>ID:</strong> ${reportId}</div>
@@ -355,7 +355,7 @@ export function printReportDossier(report: DisasterReport): void {
     </div>
     <div class="box">
       <div class="box-title">Neural Telemetry & Audit</div>
-      <div class="meta-row"><span class="meta-label">Model:</span><span class="meta-value">${report.modelVersion || 'AapdaWatch_BiLSTM'}</span></div>
+      <div class="meta-row"><span class="meta-label">Model:</span><span class="meta-value">${report.modelVersion || 'AapdaWatch_DistilBERT v1.0'}</span></div>
       <div class="meta-row"><span class="meta-label">Decision Threshold:</span><span class="meta-value">0.35 (High Recall)</span></div>
       <div class="meta-row"><span class="meta-label">Verification:</span><span class="meta-value">${(report.verificationStatus || 'unreviewed').toUpperCase()}</span></div>
       <div class="meta-row"><span class="meta-label">Incident ID:</span><span class="meta-value">${report.incidentId || 'Unassigned'}</span></div>

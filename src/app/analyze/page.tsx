@@ -126,8 +126,8 @@ export default function AnalyzePage() {
               suggestedCoordinates: coords,
               note: backendAnalysis.isSynthetic
                 ? "DEMO PREDICTION: Rule-based heuristic."
-                : "REAL NEURAL INFERENCE: AapdaWatch BiLSTM Neural Model.",
-              modelName: backendAnalysis.modelName || "AapdaWatch_BiLSTM",
+                : "REAL NEURAL INFERENCE: AapdaWatch DistilBERT v1.0 Transformer.",
+              modelName: backendAnalysis.modelName || "AapdaWatch DistilBERT v1.0",
               modelVersion: backendAnalysis.modelVersion || "1.0.0",
               decisionThreshold: backendAnalysis.decisionThreshold,
               inferenceDurationMs: backendAnalysis.inferenceDurationMs,
@@ -605,8 +605,8 @@ export default function AnalyzePage() {
                             }
                             label={
                               analysisResult.predictedClass === "disaster-related"
-                                ? (analysisResult.disasterProbability < 0.5
-                                    ? "BORDERLINE DISASTER ALERT (35% THRESHOLD)"
+                                ? (analysisResult.disasterProbability < 0.55
+                                    ? "BORDERLINE DISASTER ALERT (43% THRESHOLD)"
                                     : "DISASTER RELATED REPORT")
                                 : "NON-DISASTER REPORT"
                             }
@@ -663,7 +663,7 @@ export default function AnalyzePage() {
                           </div>
                           <div>
                             <span className="block font-medium text-[#242B27] dark:text-[#E8EDE9]">Decision Threshold</span>
-                            <span>{analysisResult.decisionThreshold ?? 0.35} (Sigmoid)</span>
+                            <span>{analysisResult.decisionThreshold ?? 0.43} (&tau; = 0.43)</span>
                           </div>
                           {analysisResult.inferenceDurationMs !== undefined && (
                             <div>

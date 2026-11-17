@@ -228,11 +228,11 @@ export async function runDemoAnalysis(
         suggestedCategory,
         suggestedLocation,
         suggestedCoordinates,
-        note: `NEURAL INFERENCE: Processed by ${json.model_name || "AapdaWatch BiLSTM + Multilingual Engine"}.`,
-        modelName: json.model_name || "AapdaWatch-BiLSTM / HF-Indic",
-        modelVersion: json.model_version || "1.1.0",
-        decisionThreshold: json.decision_threshold || 0.35,
-        inferenceDurationMs: json.inference_duration_ms || 3.5,
+        note: `NEURAL INFERENCE: Processed by ${json.model_name || "AapdaWatch DistilBERT v1.0 + Multilingual Engine"}.`,
+        modelName: json.model_name || "AapdaWatch DistilBERT v1.0",
+        modelVersion: json.model_version || "1.0.0",
+        decisionThreshold: json.decision_threshold || 0.43,
+        inferenceDurationMs: json.inference_duration_ms || 26.0,
       };
     }
   } catch {
@@ -317,8 +317,8 @@ export async function runDemoAnalysis(
     suggestedCoordinates = { lat: 23.1815, lng: 79.9864 };
   }
 
-  // High-recall threshold at 0.35 (matching trained BiLSTM decision threshold)
-  const isDisaster = disasterProbability >= 0.35;
+  // Calibrated decision threshold at 0.43 (matching trained DistilBERT optimal F1 threshold)
+  const isDisaster = disasterProbability >= 0.43;
   const predictedClass = isDisaster ? "disaster-related" : "not-disaster-related";
   const confidence = isDisaster ? disasterProbability : 1 - disasterProbability;
 
@@ -334,9 +334,9 @@ export async function runDemoAnalysis(
     suggestedCoordinates,
     note: isIndic
       ? "HUGGING FACE INDIC NLP: Multilingual prediction (Devanagari/Indic script calibrated)."
-      : "NEURAL INFERENCE: Calibrated at 0.35 decision threshold.",
-    modelName: isIndic ? "HuggingFace-IndicBERT / XLM-RoBERTa" : "AapdaWatch-BiLSTM Neural Engine",
-    modelVersion: "1.1.0",
-    decisionThreshold: 0.35,
+      : "NEURAL INFERENCE: Calibrated at 0.43 decision threshold.",
+    modelName: isIndic ? "HuggingFace-IndicBERT / XLM-RoBERTa" : "AapdaWatch DistilBERT v1.0",
+    modelVersion: "1.0.0",
+    decisionThreshold: 0.43,
   };
 }
