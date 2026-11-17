@@ -16,8 +16,8 @@ class WebSocketService {
   constructor() {
     let host =
       typeof window !== "undefined"
-        ? process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8001/ws/live-feed"
-        : "ws://localhost:8001/ws/live-feed";
+        ? process.env.NEXT_PUBLIC_WS_URL || "wss://aapdawatch-ai.onrender.com/ws/live-feed"
+        : "wss://aapdawatch-ai.onrender.com/ws/live-feed";
 
     // Auto-normalize protocol and route path
     if (host.startsWith("http://")) host = host.replace("http://", "ws://");
