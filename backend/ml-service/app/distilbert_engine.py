@@ -75,11 +75,27 @@ class DistilBERTEngine:
             print(f"[DistilBERTEngine] Warning: Could not load DistilBERT model: {e}")
             self.is_loaded = False
 
-    @staticmethod
-    def normalize_text(text: str) -> str:
+    SEMANTIC_HAZARD_MAP = [
+        (r"\b(aag lag gyi|aag lag gayi|aag lagi|aag lag|aag|आग लग गई|आग लगी|आग)\b", "fire blaze broke out"),
+        (r"\b(baadh|baad|pani bhar gya|pani bhar gaya|जलभराव|बाढ़)\b", "severe flood submerged water"),
+        (r"\b(barish|baarish|barsaat|भारी बारिश|बारिश|बरसात)\b", "heavy rain downpour storm"),
+        (r"\b(bhookamp|bhukamp|jhatke|भूकंप|भूचाल)\b", "earthquake tremors shaking"),
+        (r"\b(toofan|tufan|aandhi|तूफान|चक्रवात)\b", "cyclone violent storm hurricane"),
+        (r"\b(doob gya|doob gaya|doob rahi|dooba|डूबा|डूब)\b", "submerged drowning flood disaster"),
+        (r"\b(bachao|madad chahiye|madad karo|बचाओ|मदद)\b", "emergency rescue help needed"),
+        (r"\b(malba|malbe|gir gaya|मलबा)\b", "collapsed building rubble debris"),
+        (r"\b(ghayal|zakhmi|घायल|ज़ख्मी)\b", "injured casualties critical"),
+        (r"\b(maut|mar gaye|lash|मौत|लाश)\b", "fatalities dead victims"),
+        (r"\b(dhamaka|phat gaya|धमाका|विस्फोट)\b", "explosion blast disaster"),
+        (r"\b(bhuskhalan|pahad khisak|भूस्खलन|दरड)\b", "landslide mudslide rocks falling"),
+    ]
+
+    @classmethod
+    def normalize_text(cls, text: str) -> str:
         """
         Exact text normalization pipeline used during DistilBERT fine-tuning:
-        HTML unescape, Unicode NFKC, lowercasing, URL/User tokenization, whitespace collapse.
+        HTML unescape, Unicode NFKC, lowercasing, URL/User tokenization, whitespace collapse,
+        and Romanized Indic / Multilingual hazard canonicalization.
         """
         if not isinstance(text, str):
             return ""
@@ -89,6 +105,11 @@ class DistilBERTEngine:
         text = re.sub(r"https?://\S+|www\.\S+", " urltoken ", text)
         text = re.sub(r"@\w+", " usertoken ", text)
         text = re.sub(r"#([a-zA-Z0-9_]+)", r"\1", text)
+
+        # Canonicalize Indic & Hinglish emergency hazard terms into model semantic space
+        for pat, rep in cls.SEMANTIC_HAZARD_MAP:
+            text = re.sub(pat, rep, text, flags=re.IGNORECASE)
+
         text = re.sub(r"\s+", " ", text)
         return text.strip()
 

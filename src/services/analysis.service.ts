@@ -148,6 +148,11 @@ export const LOCATION_DETAILS: Record<string, LocationInfo> = {
   shimla: { name: "Shimla, Himachal Pradesh", lat: 31.1048, lng: 77.1734, state: "Himachal Pradesh" },
   dehradun: { name: "Dehradun, Uttarakhand", lat: 30.3165, lng: 78.0322, state: "Uttarakhand" },
   wayanad: { name: "Wayanad, Kerala", lat: 11.6854, lng: 76.1320, state: "Kerala" },
+  // Punjab / LPU / Northern Hub
+  lpu: { name: "LPU Campus, Phagwara, Punjab", lat: 31.2536, lng: 75.7037, state: "Punjab" },
+  phagwara: { name: "Phagwara, Punjab", lat: 31.2240, lng: 75.7708, state: "Punjab" },
+  jalandhar: { name: "Jalandhar, Punjab", lat: 31.3260, lng: 75.5762, state: "Punjab" },
+  punjab: { name: "Punjab Region", lat: 31.1471, lng: 75.3412, state: "Punjab" },
   // Devanagari / Hindi / Marathi
   "कानपुर": { name: "Kanpur, Uttar Pradesh", lat: 26.4499, lng: 80.3319, state: "Uttar Pradesh" },
   "नई दिल्ली": { name: "New Delhi, NCT", lat: 28.6139, lng: 77.2090, state: "Delhi" },
@@ -275,9 +280,9 @@ export async function runDemoAnalysis(
     }
   }
 
-  // Check for strong physical hazard phrases (e.g. "high fire", "fire in", "caught fire")
-  if (/\b(high\s+fire|massive\s+fire|fire\s+in|fire\s+broke\s+out|caught\s+fire|blazing\s+fire)\b/i.test(lower)) {
-    score += 0.40;
+  // Check for strong physical hazard phrases (e.g. "high fire", "fire in", "caught fire", "aag lag")
+  if (/\b(high\s+fire|massive\s+fire|fire\s+in|fire\s+broke\s+out|caught\s+fire|blazing\s+fire|aag\s+lag|aag\s+lagi|aag\s+lag\s+gyi|aag\s+lag\s+gayi)\b/i.test(lower)) {
+    score += 0.45;
     matchesFound++;
   }
 

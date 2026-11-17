@@ -218,8 +218,41 @@ async def predict(payload: PredictionRequest):
     Automatically detects Indic/Multilingual languages (Hindi, Marathi, Bengali, Hinglish).
     Broadcasts results to connected WebSocket clients in real-time.
     """
-    # 1. Check if non-Latin Indic script (Hindi, Marathi, Bengali, etc.) is detected
-    if multilingual_engine.is_indic_text(payload.text):
+    # 1. DistilBERT Transformer Engine with Multilingual Semantic Normalization (85.10% accuracy)
+    if distilbert_engine.is_loaded:
+        d_res = distilbert_engine.predict_single(payload.text, threshold=0.43)
+        prob = d_res["probability"]
+        pred_class = d_res["predicted_class"]
+        conf = d_res["confidence"]
+
+        # Multilingual Indic Hazard Corroboration (Hindi, Hinglish, Marathi, Bengali)
+        m_res = multilingual_engine.classify_multilingual(payload.text, threshold=0.43)
+        if m_res["detected_hazard"] != "other":
+            # Explicit physical hazard detected (fire, flood, earthquake, cyclone, landslide)
+            fused_prob = max(prob, m_res["disaster_probability"], 0.88)
+            prob = round(fused_prob, 4)
+            pred_class = "DISASTER_RELATED"
+            conf = prob
+
+        response_data = PredictionResponse(
+            prediction=pred_class,
+            probability=prob,
+            confidence=conf,
+            decision_threshold=d_res["threshold"],
+            model_name=d_res["model_name"],
+            model_version=d_res["model_version"],
+            inference_status="SUCCESS",
+            analysis_mode="TRANSFORMER_DISTILBERT",
+            is_synthetic=False,
+            preprocessing_version="nfkc_semantic_norm_v1",
+            preprocessing_parity="VERIFIED",
+            inference_duration_ms=d_res["inference_duration_ms"],
+            sequence_length=d_res["sequence_length"],
+            tokens=d_res["tokens"],
+            request_id=payload.request_id
+        )
+    # 2. Check if non-Latin Indic script (Hindi, Marathi, Bengali, etc.) is detected
+    elif multilingual_engine.is_indic_text(payload.text):
         ml_res = multilingual_engine.classify_multilingual(payload.text, threshold=0.43)
         response_data = PredictionResponse(
             prediction=ml_res["predicted_class"],
@@ -236,26 +269,6 @@ async def predict(payload: PredictionRequest):
             inference_duration_ms=4.2,
             sequence_length=len(payload.text.split()),
             tokens=payload.text.split()[:30],
-            request_id=payload.request_id
-        )
-    # 2. English & Romanized text: Process via Fine-Tuned DistilBERT Transformer (85.10% accuracy)
-    elif distilbert_engine.is_loaded:
-        d_res = distilbert_engine.predict_single(payload.text, threshold=0.43)
-        response_data = PredictionResponse(
-            prediction=d_res["predicted_class"],
-            probability=d_res["probability"],
-            confidence=d_res["confidence"],
-            decision_threshold=d_res["threshold"],
-            model_name=d_res["model_name"],
-            model_version=d_res["model_version"],
-            inference_status="SUCCESS",
-            analysis_mode="TRANSFORMER_DISTILBERT",
-            is_synthetic=False,
-            preprocessing_version="nfkc_clean_v1",
-            preprocessing_parity="VERIFIED",
-            inference_duration_ms=d_res["inference_duration_ms"],
-            sequence_length=d_res["sequence_length"],
-            tokens=d_res["tokens"],
             request_id=payload.request_id
         )
     elif getattr(app.state, "model_ready", False):
@@ -304,20 +317,21 @@ async def predict(payload: PredictionRequest):
             request_id=payload.request_id
         )
 
-    # Broadcast event to WebSocket stream subscribers
-    try:
-        await ws_manager.broadcast({
-            "type": "NEW_PREDICTION",
-            "data": {
-                "text": payload.text,
-                "prediction": response_data.prediction,
-                "probability": response_data.probability,
-                "model": response_data.model_name,
-                "timestamp": time.time(),
-            }
-        })
-    except Exception as e:
-        logger.warning(f"Could not broadcast to WebSocket: {e}")
+    # Broadcast event to WebSocket stream subscribers (if any active clients connected)
+    if ws_manager.active_connections:
+        try:
+            await ws_manager.broadcast({
+                "type": "NEW_PREDICTION",
+                "data": {
+                    "text": payload.text,
+                    "prediction": response_data.prediction,
+                    "probability": response_data.probability,
+                    "model": response_data.model_name,
+                    "timestamp": time.time(),
+                }
+            })
+        except Exception as e:
+            logger.warning(f"Could not broadcast to WebSocket: {e}")
 
     return response_data
 

@@ -121,6 +121,11 @@ INDIAN_CITIES_MAP = {
     "देहरादून": ("Dehradun, Uttarakhand", 30.3165, 78.0322),
     "wayanad": ("Wayanad, Kerala", 11.6854, 76.1320),
     "वायनाड": ("Wayanad, Kerala", 11.6854, 76.1320),
+    # Punjab / LPU / Northern Hub
+    "lpu": ("LPU Campus, Phagwara, Punjab", 31.2536, 75.7037),
+    "phagwara": ("Phagwara, Punjab", 31.2240, 75.7708),
+    "jalandhar": ("Jalandhar, Punjab", 31.3260, 75.5762),
+    "punjab": ("Punjab Region", 31.1471, 75.3412),
 }
 
 
