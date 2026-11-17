@@ -455,6 +455,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               longitude: lng,
               state,
             },
+            secondaryLocations: report.secondaryLocations,
             reportCount: 1,
             status: "under-review",
             verificationStatus: "unreviewed",
@@ -463,7 +464,47 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             updatedAt: new Date().toISOString(),
             tags: [report.category || "disaster", "live-prediction", "field-report"],
           };
-          nextIncidents = [newInc, ...prevIncidents];
+
+          // Generate companion incidents for any correlated intercontinental hubs (e.g. New York, Los Angeles)
+          const companionIncidents: Incident[] = [];
+          if (report.secondaryLocations && report.secondaryLocations.length > 0) {
+            report.secondaryLocations.forEach((secLoc) => {
+              const compCode = Math.floor(100 + Math.random() * 900);
+              companionIncidents.push({
+                id: `INC-${compCode}`,
+                incidentCode: `INC-${compCode}`,
+                title: `${catTitle} Alert — ${secLoc.name}`,
+                category: report.category || "other",
+                severity:
+                  prob > 0.85
+                    ? "critical"
+                    : prob > 0.65
+                      ? "high"
+                      : "medium",
+                location: {
+                  name: secLoc.name,
+                  latitude: secLoc.latitude,
+                  longitude: secLoc.longitude,
+                  state: secLoc.state,
+                },
+                secondaryLocations: [{
+                  name,
+                  latitude: lat,
+                  longitude: lng,
+                  state,
+                }],
+                reportCount: 1,
+                status: "under-review",
+                verificationStatus: "unreviewed",
+                description: `Correlated intercontinental event: ${report.text}`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                tags: [report.category || "disaster", "cross-border-correlation"],
+              });
+            });
+          }
+
+          nextIncidents = [newInc, ...companionIncidents, ...prevIncidents];
         }
 
         if (typeof window !== "undefined") {

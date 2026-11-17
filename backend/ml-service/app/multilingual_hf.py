@@ -126,6 +126,18 @@ INDIAN_CITIES_MAP = {
     "phagwara": ("Phagwara, Punjab", 31.2240, 75.7708),
     "jalandhar": ("Jalandhar, Punjab", 31.3260, 75.5762),
     "punjab": ("Punjab Region", 31.1471, 75.3412),
+    # Global & International Centers (USA, UK, Europe, Global Hubs)
+    "new york": ("New York, United States", 40.7128, -74.0060),
+    "nyc": ("New York, United States", 40.7128, -74.0060),
+    "los angeles": ("Los Angeles, United States", 34.0522, -118.2437),
+    "los angel": ("Los Angeles, United States", 34.0522, -118.2437),
+    "chicago": ("Chicago, United States", 41.8781, -87.6298),
+    "london": ("London, United Kingdom", 51.5074, -0.1278),
+    "paris": ("Paris, France", 48.8566, 2.3522),
+    "tokyo": ("Tokyo, Japan", 35.6762, 139.6503),
+    "dubai": ("Dubai, United Arab Emirates", 25.2048, 55.2708),
+    "sydney": ("Sydney, Australia", -33.8688, 151.2093),
+    "singapore": ("Singapore", 1.3521, 103.8198),
 }
 
 

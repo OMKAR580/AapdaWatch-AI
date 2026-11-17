@@ -16,6 +16,7 @@ export interface DemoAnalysisResult {
   suggestedCategory: "flood" | "earthquake" | "fire" | "cyclone" | "landslide" | "other" | null;
   suggestedLocation?: string | null;
   suggestedCoordinates?: { lat: number; lng: number } | null;
+  allLocations?: LocationInfo[];
   note: string;
   modelName: string;
   modelVersion: string;
@@ -168,7 +169,50 @@ export const LOCATION_DETAILS: Record<string, LocationInfo> = {
   "शिमला": { name: "Shimla, Himachal Pradesh", lat: 31.1048, lng: 77.1734, state: "Himachal Pradesh" },
   "देहरादून": { name: "Dehradun, Uttarakhand", lat: 30.3165, lng: 78.0322, state: "Uttarakhand" },
   "वायनाड": { name: "Wayanad, Kerala", lat: 11.6854, lng: 76.1320, state: "Kerala" },
+  // Global & International Centers (USA, Europe, Asia, Global Hubs)
+  "new york": { name: "New York, United States", lat: 40.7128, lng: -74.0060, state: "New York" },
+  "nyc": { name: "New York, United States", lat: 40.7128, lng: -74.0060, state: "New York" },
+  "los angeles": { name: "Los Angeles, United States", lat: 34.0522, lng: -118.2437, state: "California" },
+  "los angel": { name: "Los Angeles, United States", lat: 34.0522, lng: -118.2437, state: "California" },
+  "california": { name: "California, United States", lat: 36.7783, lng: -119.4179, state: "California" },
+  "chicago": { name: "Chicago, United States", lat: 41.8781, lng: -87.6298, state: "Illinois" },
+  "london": { name: "London, United Kingdom", lat: 51.5074, lng: -0.1278, state: "England" },
+  "paris": { name: "Paris, France", lat: 48.8566, lng: 2.3522, state: "Île-de-France" },
+  "tokyo": { name: "Tokyo, Japan", lat: 35.6762, lng: 139.6503, state: "Tokyo" },
+  "dubai": { name: "Dubai, United Arab Emirates", lat: 25.2048, lng: 55.2708, state: "Dubai" },
+  "sydney": { name: "Sydney, Australia", lat: -33.8688, lng: 151.2093, state: "New South Wales" },
+  "singapore": { name: "Singapore", lat: 1.3521, lng: 103.8198, state: "Singapore" },
+  "india": { name: "India Central Operations", lat: 23.1815, lng: 79.9864, state: "India" },
 };
+
+/**
+ * Extracts all unique location entities present in the report text.
+ * Sorted by descending key length so specific multi-word entities (e.g. "new delhi") match first.
+ */
+export function extractAllLocations(text: string): LocationInfo[] {
+  if (!text) return [];
+  const lower = text.toLowerCase();
+  const matched: LocationInfo[] = [];
+  const seen = new Set<string>();
+
+  const sortedKeys = Object.keys(LOCATION_DETAILS).sort((a, b) => b.length - a.length);
+
+  for (const key of sortedKeys) {
+    const isMatched =
+      new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(lower) ||
+      lower.includes(key);
+
+    if (isMatched) {
+      const loc = LOCATION_DETAILS[key];
+      if (!seen.has(loc.name)) {
+        seen.add(loc.name);
+        matched.push(loc);
+      }
+    }
+  }
+
+  return matched;
+}
 
 function stableHash(str: string): number {
   let hash = 0;
@@ -208,19 +252,15 @@ export async function runDemoAnalysis(
       const json = await res.json();
       const isDisaster = (json.probability ?? 0) >= (json.decision_threshold ?? 0.43);
 
-      // Extract location
-      let suggestedLocation = "Central India / Field Report";
-      let suggestedCoordinates = { lat: 23.1815, lng: 79.9864 };
-      const lower = text.toLowerCase();
-      for (const [key, details] of Object.entries(LOCATION_DETAILS)) {
-        if (lower.includes(key)) {
-          suggestedLocation = details.name;
-          suggestedCoordinates = { lat: details.lat, lng: details.lng };
-          break;
-        }
-      }
+      // Extract all mentioned locations
+      const allLocs = extractAllLocations(text);
+      let suggestedLocation = allLocs[0]?.name || "Central India / Field Report";
+      let suggestedCoordinates = allLocs[0]
+        ? { lat: allLocs[0].lat, lng: allLocs[0].lng }
+        : { lat: 23.1815, lng: 79.9864 };
 
       // Extract category
+      const lower = text.toLowerCase();
       let suggestedCategory: "flood" | "earthquake" | "fire" | "cyclone" | "landslide" | "other" | null = "other";
       if (/flood|baadh|barish|baarish|barsaat|rain|water|paani|बाढ़|जलभराव|पूर|বন্যা|पाणी|पाऊस/i.test(lower)) suggestedCategory = "flood";
       else if (/earthquake|quake|tremor|bhookamp|भूकंप|भूचाल|धक्के/i.test(lower)) suggestedCategory = "earthquake";
@@ -236,6 +276,7 @@ export async function runDemoAnalysis(
         suggestedCategory,
         suggestedLocation,
         suggestedCoordinates,
+        allLocations: allLocs,
         note: `REAL NEURAL INFERENCE: Processed by ${json.model_name || "AapdaWatch DistilBERT v1.0 Transformer"} (Render Cloud).`,
         modelName: json.model_name || "AapdaWatch DistilBERT v1.0",
         modelVersion: json.model_version || "1.0.0",
@@ -329,21 +370,11 @@ export async function runDemoAnalysis(
   }
 
   // Location extraction
-  let suggestedLocation: string | null = null;
-  let suggestedCoordinates: { lat: number; lng: number } | null = null;
-
-  for (const [key, details] of Object.entries(LOCATION_DETAILS)) {
-    if (lower.includes(key.toLowerCase())) {
-      suggestedLocation = details.name;
-      suggestedCoordinates = { lat: details.lat, lng: details.lng };
-      break;
-    }
-  }
-
-  if (!suggestedLocation) {
-    suggestedLocation = "Central India / Field Report";
-    suggestedCoordinates = { lat: 23.1815, lng: 79.9864 };
-  }
+  const allLocs = extractAllLocations(text);
+  const suggestedLocation = allLocs[0]?.name || "Central India / Field Report";
+  const suggestedCoordinates = allLocs[0]
+    ? { lat: allLocs[0].lat, lng: allLocs[0].lng }
+    : { lat: 23.1815, lng: 79.9864 };
 
   // Calibrated decision threshold at 0.43 (matching trained DistilBERT optimal F1 threshold)
   const isDisaster = disasterProbability >= 0.43;
@@ -360,6 +391,7 @@ export async function runDemoAnalysis(
     suggestedCategory,
     suggestedLocation,
     suggestedCoordinates,
+    allLocations: allLocs,
     note: isIndic
       ? "HUGGING FACE INDIC NLP: Multilingual prediction (Devanagari/Indic script calibrated)."
       : "NEURAL INFERENCE: Calibrated at 0.43 decision threshold.",

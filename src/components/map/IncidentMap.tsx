@@ -6,6 +6,7 @@ import DottedMap from "dotted-map";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import type { Incident, Severity } from "@/types";
+import { LOCATION_DETAILS } from "@/services/analysis.service";
 import {
   MapPin,
   Flame,
@@ -134,7 +135,7 @@ export function IncidentMap({
     []
   );
 
-  // Real disaster connection lines (only real disaster correlations between live incidents)
+  // Real disaster connection lines (correlates live dispatches across cities and intercontinental hubs)
   const connectionLines = useMemo(() => {
     const list: Array<{
       id: string;
@@ -143,7 +144,7 @@ export function IncidentMap({
       color: string;
     }> = [];
 
-    // Dynamically connect any real incidents that share the same disaster category or location
+    // 1. Inter-incident correlations (incidents sharing the same disaster category)
     const categoryGroups: Record<string, Incident[]> = {};
     incidents.forEach((inc) => {
       if (inc.location?.latitude && inc.location?.longitude) {
@@ -185,10 +186,78 @@ export function IncidentMap({
       }
     });
 
+    // 2. Intra-incident multi-location correlations (e.g. New York <-> New Delhi within single report/incident)
+    incidents.forEach((inc) => {
+      const startLoc = inc.location;
+      if (!startLoc?.latitude || !startLoc?.longitude) return;
+
+      const extraLocs: Array<{ lat: number; lng: number; label: string }> = [];
+
+      // Check explicit secondaryLocations
+      if (inc.secondaryLocations && inc.secondaryLocations.length > 0) {
+        inc.secondaryLocations.forEach((sec) => {
+          extraLocs.push({
+            lat: sec.latitude,
+            lng: sec.longitude,
+            label: sec.name.split(",")[0].trim(),
+          });
+        });
+      }
+
+      // Check text mentions in description or title
+      const textToSearch = `${inc.title} ${inc.description || ""}`.toLowerCase();
+      for (const [key, details] of Object.entries(LOCATION_DETAILS)) {
+        const isMatched =
+          new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(textToSearch) ||
+          textToSearch.includes(key);
+
+        if (isMatched) {
+          const label = details.name.split(",")[0].trim();
+          const isSelf =
+            Math.abs(details.lat - startLoc.latitude) < 0.1 &&
+            Math.abs(details.lng - startLoc.longitude) < 0.1;
+          if (!isSelf && !extraLocs.some((e) => e.label === label)) {
+            extraLocs.push({
+              lat: details.lat,
+              lng: details.lng,
+              label,
+            });
+          }
+        }
+      }
+
+      extraLocs.forEach((extra) => {
+        const lineId = `intra-${inc.id}-${extra.label.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
+        if (!list.some((l) => l.id === lineId)) {
+          list.push({
+            id: lineId,
+            start: {
+              lat: extra.lat,
+              lng: extra.lng,
+              label: extra.label,
+            },
+            end: {
+              lat: startLoc.latitude,
+              lng: startLoc.longitude,
+              label: startLoc.name.split(",")[0].trim(),
+            },
+            color:
+              inc.category === "flood"
+                ? "#0ea5e9"
+                : inc.category === "cyclone"
+                  ? "#8b5cf6"
+                  : inc.category === "earthquake"
+                    ? "#f59e0b"
+                    : "#ef4444",
+          });
+        }
+      });
+    });
+
     return list;
   }, [incidents]);
 
-  // Unique connected nodes (e.g. Mathura, Kanpur) with zero overlap
+  // Unique connected nodes (e.g. New York, New Delhi, Mathura, Kanpur) with zero overlap
   const connectedNodes = useMemo(() => {
     const nodeMap = new Map<
       string,
@@ -201,8 +270,14 @@ export function IncidentMap({
           label: line.start.label,
           lat: line.start.lat,
           lng: line.start.lng,
-          xOffset: line.start.label === "Mathura" ? -56 : 10,
-          yOffset: line.start.label === "Mathura" ? -32 : -16,
+          xOffset:
+            line.start.label === "Mathura" ? -56 :
+            line.start.label === "New York" ? -60 :
+            line.start.label === "Los Angeles" ? -72 : 10,
+          yOffset:
+            line.start.label === "Mathura" ? -32 :
+            line.start.label === "New York" ? -28 :
+            line.start.label === "Los Angeles" ? -28 : -16,
         });
       }
       if (!nodeMap.has(line.end.label)) {
@@ -210,14 +285,42 @@ export function IncidentMap({
           label: line.end.label,
           lat: line.end.lat,
           lng: line.end.lng,
-          xOffset: line.end.label === "Kanpur" ? 10 : -56,
-          yOffset: line.end.label === "Kanpur" ? -16 : -32,
+          xOffset:
+            line.end.label === "Kanpur" ? 10 :
+            line.end.label === "New Delhi" ? 12 : -56,
+          yOffset:
+            line.end.label === "Kanpur" ? -16 :
+            line.end.label === "New Delhi" ? -20 : -32,
         });
       }
     });
 
     return Array.from(nodeMap.values());
   }, [connectionLines]);
+
+  // Auto-switch to "global" Grid when intercontinental points or connections exist
+  useEffect(() => {
+    const hasGlobal =
+      incidents.some(
+        (i) =>
+          i.location &&
+          (i.location.longitude < 65 ||
+            i.location.longitude > 100 ||
+            i.location.latitude < 5 ||
+            i.location.latitude > 38)
+      ) ||
+      connectionLines.some(
+        (l) =>
+          l.start.lng < 65 ||
+          l.start.lng > 100 ||
+          l.end.lng < 65 ||
+          l.end.lng > 100
+      );
+
+    if (hasGlobal) {
+      setViewMode("global");
+    }
+  }, [incidents, connectionLines]);
 
   // Animation timing configuration matching WorldMap video
   const staggerDelay = 0.35;
@@ -226,18 +329,52 @@ export function IncidentMap({
   const pauseTime = 2; // Pause for 2 seconds when all paths are drawn
   const fullCycleDuration = totalAnimationTime + pauseTime;
 
-  // Map each incident to an exact point on the 800x400 map
+  // Map each incident (and secondary location hubs) to an exact point on the map
   const incidentPoints = useMemo(() => {
-    return incidents
-      .filter((inc) => inc.location?.latitude && inc.location?.longitude)
-      .map((inc) => {
+    const points: Array<{
+      incident: Incident;
+      x: number;
+      y: number;
+    }> = [];
+    const seen = new Set<string>();
+
+    incidents.forEach((inc) => {
+      if (inc.location?.latitude && inc.location?.longitude) {
         const pt = projectPoint(inc.location.latitude, inc.location.longitude);
-        return {
-          incident: inc,
-          x: pt.x,
-          y: pt.y,
-        };
-      });
+        const key = `${inc.id}-${pt.x.toFixed(1)},${pt.y.toFixed(1)}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          points.push({ incident: inc, x: pt.x, y: pt.y });
+        }
+      }
+
+      if (inc.secondaryLocations && inc.secondaryLocations.length > 0) {
+        inc.secondaryLocations.forEach((sec, idx) => {
+          const pt = projectPoint(sec.latitude, sec.longitude);
+          const key = `${inc.id}-sec-${idx}-${pt.x.toFixed(1)},${pt.y.toFixed(1)}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            points.push({
+              incident: {
+                ...inc,
+                id: `${inc.id}-sec-${idx}`,
+                title: `${inc.category ? inc.category.toUpperCase() : "DISASTER"} — ${sec.name}`,
+                location: {
+                  name: sec.name,
+                  latitude: sec.latitude,
+                  longitude: sec.longitude,
+                  state: sec.state,
+                },
+              },
+              x: pt.x,
+              y: pt.y,
+            });
+          }
+        });
+      }
+    });
+
+    return points;
   }, [incidents, projectPoint]);
 
   return (

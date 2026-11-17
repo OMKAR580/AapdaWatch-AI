@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { IncidentMap } from "@/components/map/IncidentMap";
 import {
   StatusBadge,
   getSeverityVariant,
@@ -29,6 +30,7 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
+  Globe,
 } from "lucide-react";
 
 export default function IncidentDetailPage() {
@@ -205,6 +207,31 @@ export default function IncidentDetailPage() {
               The NLP model calculates text similarity and disaster probability. However, human reviewers in the Verification Center assign factual confirmation. A high prediction score does not confirm an incident is physically verified.
             </p>
           </div>
+        </div>
+      </GlassCard>
+
+      {/* Geospatial Telemetry & Intercontinental Arc Map */}
+      <GlassCard className="p-5 space-y-3 border border-black/5 dark:border-white/10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-[#326B54]" />
+            <h3 className="text-sm font-bold text-[#242B27] dark:text-[#E8EDE9]">
+              Geospatial Telemetry & Cross-Border Correlation
+            </h3>
+          </div>
+          <Link
+            href="/map"
+            className="text-[11px] font-semibold text-[#326B54] dark:text-emerald-400 hover:underline flex items-center gap-1"
+          >
+            <span>Open Fullscreen Live Map →</span>
+          </Link>
+        </div>
+        <div className="rounded-xl overflow-hidden border border-black/10 dark:border-white/10">
+          <IncidentMap
+            incidents={[incident]}
+            onIncidentClick={() => {}}
+            selectedIncidentId={incident.id}
+          />
         </div>
       </GlassCard>
 

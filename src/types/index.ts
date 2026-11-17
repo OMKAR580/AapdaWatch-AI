@@ -44,6 +44,7 @@ export interface Incident {
   category: DisasterCategory;
   severity: Severity;
   location: Location;
+  secondaryLocations?: Location[];
   reportCount: number;
   status: IncidentStatus;
   description: string;
@@ -70,6 +71,7 @@ export interface DisasterReport {
   reviewedBy?: string;
   reviewedAt?: string;
   location?: Partial<Location>;
+  secondaryLocations?: Location[];
   analysisId?: string;
   modelVersion?: string;
 }

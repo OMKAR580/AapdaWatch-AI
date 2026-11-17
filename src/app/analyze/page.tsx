@@ -147,6 +147,14 @@ export default function AnalyzePage() {
       setAnalysisResult(finalResult);
 
       // 3. Construct live DisasterReport
+      const allLocs = finalResult.allLocations || [];
+      const secondaryLocations = allLocs.slice(1).map((loc) => ({
+        name: loc.name,
+        latitude: loc.lat,
+        longitude: loc.lng,
+        state: loc.state,
+      }));
+
       const newReportRecord: DisasterReport = {
         id: finalReportId,
         text: inputText.trim(),
@@ -157,6 +165,7 @@ export default function AnalyzePage() {
           latitude: coords.lat,
           longitude: coords.lng,
         },
+        secondaryLocations: secondaryLocations.length > 0 ? secondaryLocations : undefined,
         predictedClass: finalResult.predictedClass,
         confidence: finalResult.confidence,
         disasterProbability: finalResult.disasterProbability,
