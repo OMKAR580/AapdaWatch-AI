@@ -1,0 +1,32 @@
+{
+    "selected_threshold": 0.43,
+    "default_threshold": 0.50,
+    "selection_rationale": "Empirical grid search across thresholds [0.20, 0.80] in increments of 0.01 on validation_split.csv (N=1497). The threshold of 0.43 maximizes F1-score (0.8124 vs 0.7969 at 0.50) and increases recall to 75.71% (capturing 20 additional true disaster reports) while maintaining 87.66% precision.",
+    "validation_split_metrics": {
+        "threshold_0_43": {
+            "accuracy": 0.8510,
+            "precision": 0.8766,
+            "recall": 0.7571,
+            "f1_score": 0.8124,
+            "true_negatives": 791,
+            "false_positives": 68,
+            "false_negatives": 155,
+            "true_positives": 483
+        },
+        "threshold_0_50": {
+            "accuracy": 0.8424,
+            "precision": 0.8836,
+            "recall": 0.7257,
+            "f1_score": 0.7969,
+            "true_negatives": 798,
+            "false_positives": 61,
+            "false_negatives": 175,
+            "true_positives": 463
+        }
+    },
+    "runtime_guidelines": {
+        "standard_mode": 0.43,
+        "high_precision_mode": 0.55,
+        "high_recall_mode": 0.35
+    }
+}

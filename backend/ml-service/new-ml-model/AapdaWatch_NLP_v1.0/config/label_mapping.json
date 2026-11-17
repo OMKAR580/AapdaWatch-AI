@@ -1,0 +1,24 @@
+{
+    "classes": [
+        {
+            "class_index": 0,
+            "label_name": "Non-Disaster",
+            "slug": "non_disaster",
+            "description": "Casual conversation, everyday figurative speech, news commentary, or non-emergency context."
+        },
+        {
+            "class_index": 1,
+            "label_name": "Disaster",
+            "slug": "disaster",
+            "description": "Urgent crisis, structural catastrophe, fire, flood, earthquake, or emergency requiring triage."
+        }
+    ],
+    "id2label": {
+        "0": "Non-Disaster",
+        "1": "Disaster"
+    },
+    "label2id": {
+        "Non-Disaster": 0,
+        "Disaster": 1
+    }
+}

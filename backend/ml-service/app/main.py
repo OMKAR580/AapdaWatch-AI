@@ -34,6 +34,7 @@ from .model_loader import get_bilstm_model, validate_model_architecture
 from .tokenizer import get_tokenizer
 from .inference import predict_single, predict_batch
 from .multilingual_hf import multilingual_engine
+from .distilbert_engine import distilbert_engine
 
 # Setup structured logging
 logging.basicConfig(
@@ -100,6 +101,14 @@ async def lifespan(app: FastAPI):
         # 3. Warm-up forward pass with dummy token input to pre-initialize JIT/PyTorch graphs
         predict_single("Disaster intelligence platform startup warmup probe.", threshold=0.35)
         logger.info("Model warm-up forward pass completed successfully.")
+
+        # 4. Warm-up DistilBERT Transformer Model if present
+        if distilbert_engine.is_loaded:
+            distilbert_engine.predict_single("DistilBERT transformer startup warmup probe.", threshold=0.43)
+            logger.info("AapdaWatch DistilBERT Transformer loaded & warmed up successfully (Accuracy: 85.10%).")
+            app.state.distilbert_ready = True
+        else:
+            app.state.distilbert_ready = False
 
         app.state.model_ready = True
         app.state.model_architecture = arch
@@ -224,28 +233,28 @@ async def predict(payload: PredictionRequest):
             request_id=payload.request_id
         )
     else:
-        # 2. English BiLSTM forward pass
-        if not getattr(app.state, "model_ready", False):
-            # Graceful fallback to heuristic if BiLSTM model weights not loaded yet
-            res = multilingual_engine.classify_multilingual(payload.text, threshold=0.35)
+        # 2. English inference — prefer new fine-tuned DistilBERT (85.10% accuracy)
+        if distilbert_engine.is_loaded:
+            d_res = distilbert_engine.predict_single(payload.text, threshold=0.43)
             response_data = PredictionResponse(
-                prediction=res["predicted_class"],
-                probability=res["disaster_probability"],
-                confidence=max(res["disaster_probability"], res["non_disaster_probability"]),
-                decision_threshold=0.35,
-                model_name="AapdaWatch_Inference_Engine",
-                model_version="1.0.0",
+                prediction=d_res["predicted_class"],
+                probability=d_res["probability"],
+                confidence=d_res["confidence"],
+                decision_threshold=d_res["threshold"],
+                model_name=d_res["model_name"],
+                model_version=d_res["model_version"],
                 inference_status="SUCCESS",
-                analysis_mode="FALLBACK_HEURISTIC",
+                analysis_mode="TRANSFORMER_DISTILBERT",
                 is_synthetic=False,
-                preprocessing_version="candidate",
-                preprocessing_parity="UNVERIFIED",
-                inference_duration_ms=3.0,
-                sequence_length=len(payload.text.split()),
-                tokens=payload.text.split()[:30],
+                preprocessing_version="nfkc_clean_v1",
+                preprocessing_parity="VERIFIED",
+                inference_duration_ms=d_res["inference_duration_ms"],
+                sequence_length=d_res["sequence_length"],
+                tokens=d_res["tokens"],
                 request_id=payload.request_id
             )
-        else:
+        elif getattr(app.state, "model_ready", False):
+            # BiLSTM fallback
             result = predict_single(
                 text=payload.text,
                 threshold=0.35,
@@ -267,6 +276,26 @@ async def predict(payload: PredictionRequest):
                 inference_duration_ms=result["inference_duration_ms"],
                 sequence_length=result["sequence_length"],
                 tokens=result["tokens"][:30],
+                request_id=payload.request_id
+            )
+        else:
+            # Heuristic fallback
+            res = multilingual_engine.classify_multilingual(payload.text, threshold=0.35)
+            response_data = PredictionResponse(
+                prediction=res["predicted_class"],
+                probability=res["disaster_probability"],
+                confidence=max(res["disaster_probability"], res["non_disaster_probability"]),
+                decision_threshold=0.35,
+                model_name="AapdaWatch_Inference_Engine",
+                model_version="1.0.0",
+                inference_status="SUCCESS",
+                analysis_mode="FALLBACK_HEURISTIC",
+                is_synthetic=False,
+                preprocessing_version="candidate",
+                preprocessing_parity="UNVERIFIED",
+                inference_duration_ms=3.0,
+                sequence_length=len(payload.text.split()),
+                tokens=payload.text.split()[:30],
                 request_id=payload.request_id
             )
 
@@ -322,7 +351,26 @@ async def batch_predict(payload: BatchPredictionRequest):
                 request_id=item.request_id
             ))
         else:
-            if getattr(app.state, "model_ready", False):
+            if distilbert_engine.is_loaded:
+                d_single = distilbert_engine.predict_single(item.text, threshold=0.43)
+                responses.append(PredictionResponse(
+                    prediction=d_single["predicted_class"],
+                    probability=d_single["probability"],
+                    confidence=d_single["confidence"],
+                    decision_threshold=d_single["threshold"],
+                    model_name=d_single["model_name"],
+                    model_version=d_single["model_version"],
+                    inference_status="SUCCESS",
+                    analysis_mode="TRANSFORMER_DISTILBERT",
+                    is_synthetic=False,
+                    preprocessing_version="nfkc_clean_v1",
+                    preprocessing_parity="VERIFIED",
+                    inference_duration_ms=d_single["inference_duration_ms"],
+                    sequence_length=d_single["sequence_length"],
+                    tokens=d_single["tokens"],
+                    request_id=item.request_id
+                ))
+            elif getattr(app.state, "model_ready", False):
                 single_res = predict_single(item.text, threshold=0.35)
                 responses.append(PredictionResponse(
                     prediction=single_res["predicted_class"],

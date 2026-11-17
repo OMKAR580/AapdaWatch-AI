@@ -1,8 +1,11 @@
-# Minimal pinned dependencies for AapdaWatch AI BiLSTM inference runtime & FastAPI microservice
+# Minimal pinned dependencies for AapdaWatch AI DistilBERT & BiLSTM inference runtime & FastAPI microservice
 keras==3.15.1
 h5py==3.16.0
 numpy>=2.0.0
 torch>=2.0.0
+transformers>=4.45.0
+tokenizers>=0.20.0
+safetensors>=0.4.0
 fastapi>=0.110.0
 uvicorn[standard]>=0.28.0
 websockets>=12.0

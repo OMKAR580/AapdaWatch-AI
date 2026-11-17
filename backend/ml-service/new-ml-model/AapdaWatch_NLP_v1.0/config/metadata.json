@@ -1,0 +1,114 @@
+{
+    "model_id": "model_d_distilbert_base_uncased",
+    "model_type": "DistilBertForSequenceClassification (PyTorch CPU)",
+    "base_model": "distilbert/distilbert-base-uncased",
+    "framework": "PyTorch 2.15.0+cpu + Transformers transformers",
+    "hardware_device": "Intel CPU (10 threads)",
+    "random_seed": 42,
+    "sequence_length": 64,
+    "batch_size": 16,
+    "learning_rate": 2e-05,
+    "weight_decay": 0.01,
+    "training_time_seconds": 2535.78,
+    "model_disk_size_mb": 255.43,
+    "total_parameters": 66955010,
+    "trainable_parameters": 66955010,
+    "best_epoch": 2,
+    "lowest_val_loss": 0.374,
+    "inference_latency_ms": {
+        "mean": 26.05,
+        "p95": 31.56
+    },
+    "validation_threshold_0_50": {
+        "accuracy": 0.8424,
+        "precision": 0.8836,
+        "recall": 0.7257,
+        "f1": 0.7969,
+        "roc_auc": 0.899,
+        "pr_auc": 0.9041,
+        "confusion_matrix": [
+            [
+                798,
+                61
+            ],
+            [
+                175,
+                463
+            ]
+        ]
+    },
+    "validation_optimal_threshold": {
+        "threshold": 0.43,
+        "selection_criterion": "Maximum validation F1-score",
+        "accuracy": 0.851,
+        "precision": 0.8766,
+        "recall": 0.7571,
+        "f1": 0.8124,
+        "confusion_matrix": [
+            [
+                791,
+                68
+            ],
+            [
+                155,
+                483
+            ]
+        ]
+    },
+    "hard_eval_synthetic_benchmark": {
+        "threshold_0_50_accuracy": 0.81,
+        "threshold_0_50_f1": 0.8403,
+        "threshold_optimal_accuracy": 0.81,
+        "threshold_optimal_precision": 0.7246,
+        "threshold_optimal_recall": 1.0,
+        "threshold_optimal_f1": 0.8403,
+        "confusion_matrix_optimal": [
+            [
+                31,
+                19
+            ],
+            [
+                0,
+                50
+            ]
+        ],
+        "category_breakdown": {
+            "casual_everyday_keyword": {
+                "count": 20,
+                "accuracy": 0.8,
+                "f1": 0.0,
+                "tp": 0,
+                "tn": 16,
+                "fp": 4,
+                "fn": 0
+            },
+            "genuine_disaster_report": {
+                "count": 50,
+                "accuracy": 1.0,
+                "f1": 1.0,
+                "tp": 50,
+                "tn": 0,
+                "fp": 0,
+                "fn": 0
+            },
+            "metaphorical_figurative": {
+                "count": 15,
+                "accuracy": 0.8667,
+                "f1": 0.0,
+                "tp": 0,
+                "tn": 13,
+                "fp": 2,
+                "fn": 0
+            },
+            "negation_false_alarm": {
+                "count": 15,
+                "accuracy": 0.1333,
+                "f1": 0.0,
+                "tp": 0,
+                "tn": 2,
+                "fp": 13,
+                "fn": 0
+            }
+        }
+    }
+}

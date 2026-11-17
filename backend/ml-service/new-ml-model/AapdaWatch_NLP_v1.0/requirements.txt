@@ -1,0 +1,8 @@
+# AapdaWatch NLP v1.0 — Minimal Standalone CPU Inference Dependencies
+# Target Runtime: Python >= 3.11, == 3.12.*
+# Verified against environment: torch 2.15.0+cpu, transformers 5.23.0, numpy 2.5.4
+
+torch>=2.4.0
+transformers>=4.45.0,<=5.25.0
+tokenizers>=0.20.0,<=0.24.0
+numpy>=1.26.0,<=2.6.0
